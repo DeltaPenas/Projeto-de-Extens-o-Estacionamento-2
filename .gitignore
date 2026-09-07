@@ -42,3 +42,20 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment files
+/src/environments/*.local.ts
+
+# Logs
+*.log
+logs/
+
+# OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.*
+!.env.example
