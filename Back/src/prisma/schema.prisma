@@ -1,0 +1,22 @@
+// use prisma-next
+
+model Carro {
+  id     Int    @id @default(autoincrement())
+  placa  String @unique
+  modelo String
+  cor    String
+}
+
+model Andar{
+  id     Int   @id @default(autoincrement())
+  numero Int
+  vagas Vaga[]  
+}
+
+model Vaga{
+  id     Int    @id @default(autoincrement())
+  numero Int
+  andar Andar @relation(fields: [andarId], references: [id])
+  andarId Int    
+}
+
