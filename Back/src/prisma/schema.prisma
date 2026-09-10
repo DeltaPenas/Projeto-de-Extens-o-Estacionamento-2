@@ -1,22 +1,34 @@
-// use prisma-next
-
 model Carro {
-  id     Int    @id @default(autoincrement())
-  placa  String @unique
-  modelo String
-  cor    String
+  id        Int                       @id @default(autoincrement())
+  placa     String                    @unique
+  modelo    String
+  cor       String
+  registros RegistroEstacionamentos[]
 }
 
-model Andar{
-  id     Int   @id @default(autoincrement())
-  numero Int
-  vagas Vaga[]  
-}
-
-model Vaga{
+model Andar {
   id     Int    @id @default(autoincrement())
   numero Int
-  andar Andar @relation(fields: [andarId], references: [id])
-  andarId Int    
+  vagas  Vaga[]
 }
 
+model Vaga {
+  id        Int                       @id @default(autoincrement())
+  numero    Int
+
+  andar     Andar                     @relation(fields:[andarId], references:[id])
+  andarId   Int
+
+  registros RegistroEstacionamentos[]
+}
+
+model RegistroEstacionamentos {
+  id      Int       @id @default(autoincrement())
+  entrada DateTime
+  saida   DateTime?
+
+  carro   Carro     @relation(fields:[carroId], references:[id])
+  carroId Int
+  vaga    Vaga      @relation(fields:[vagaId], references:[id])
+  vagaId  Int
+}
