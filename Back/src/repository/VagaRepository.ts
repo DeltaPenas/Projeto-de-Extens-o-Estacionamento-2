@@ -1,4 +1,5 @@
-import {PrismaClient} from "@prisma/client";
+// @ts-ignore Prisma Client is generated/installed outside this source file.
+import { PrismaClient } from "@prisma/client";
  const prisma = new PrismaClient();
 
  export class VagaRepository {
