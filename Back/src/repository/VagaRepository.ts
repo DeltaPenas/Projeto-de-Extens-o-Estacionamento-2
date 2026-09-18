@@ -32,4 +32,15 @@ import { PrismaClient } from "@prisma/client";
             where:{id}
         })
     }
+    async listarPorAndar(andarId: number) {
+    return prisma.vaga.findMany({
+        where: { andarId }
+    });
+}
+
+async buscarRegistroAtivo(vagaId: number) {
+    return prisma.registroEstacionamentos.findFirst({
+        where: { vagaId, saida: null }
+    });
+}
  }
