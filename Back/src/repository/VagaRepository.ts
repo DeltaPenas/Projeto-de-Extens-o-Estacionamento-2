@@ -3,28 +3,24 @@ import { PrismaClient } from "@prisma/client";
  const prisma = new PrismaClient();
 
  export class VagaRepository {
-    async criar(numero:number, andarId: number){
+    async criar(numero:number){
         return prisma.vaga.create({
-            data:{numero, andarId},
-            include:{andar:true}
+            data:{numero};
         });
     }
     async listarTodas(){
         return prisma.vaga.findMany({
-            include:{andar:true}
         });
     }
     async listarPorId(id:number){
         return prisma.vaga.findUnique({
-            where:{id},
-            include:{andar:true}
+            where:{id};
         })
     }
-    async atualizar(id:number,dados:Partial<{numero:number,andarId:number}>){
+    async atualizar(id:number,dados:Partial<{numero:number}>){
                 return prisma.vaga.update({
             where:{id},
-            data:dados,
-            include:{andar:true}
+            data:dados;
         })
     }
     async deletar(id:number){
@@ -32,11 +28,7 @@ import { PrismaClient } from "@prisma/client";
             where:{id}
         })
     }
-    async listarPorAndar(andarId: number) {
-    return prisma.vaga.findMany({
-        where: { andarId }
-    });
-}
+ 
 
 async buscarRegistroAtivo(vagaId: number) {
     return prisma.registroEstacionamentos.findFirst({

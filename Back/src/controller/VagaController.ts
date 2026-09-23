@@ -7,13 +7,13 @@ export class VagaController {
 
     async criar(req: Request, res: Response) {
         try {
-            const { numero, andarId } = req.body;
+            const { numero} = req.body;
 
-            if (!numero || !andarId) {
+            if (!numero) {
                 return res.status(400).json({ erro: "numero e andarId são obrigatórios" });
             }
 
-            const vaga = await vagaService.criar(numero, andarId);
+            const vaga = await vagaService.criar(numero);
             return res.status(201).json(vaga);
         } catch (error: any) {
             return res.status(400).json({ erro: error.message });
@@ -42,9 +42,9 @@ export class VagaController {
     async atualizar(req: Request, res: Response) {
         try {
             const id = Number(req.params.id);
-            const { numero, andarId } = req.body;
+            const { numero } = req.body;
 
-            const vaga = await vagaService.atualizar(id, { numero, andarId });
+            const vaga = await vagaService.atualizar(id, { numero });
             return res.status(200).json(vaga);
         } catch (error: any) {
             return res.status(400).json({ erro: error.message });

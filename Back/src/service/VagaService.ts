@@ -5,15 +5,11 @@ const vagaRepository = new VagaRepository();
 
 export class VagaService {
 
-    async criar(numero: number, andarId: number) {
-        const vagasDoAndar = await vagaRepository.listarPorAndar(andarId);
-        const jaExiste = vagasDoAndar.some((v: any) => v.numero === numero);
+    async criar(numero: number) {
+    
+        
 
-        if (jaExiste) {
-            throw new Error("Já existe uma vaga com esse número neste andar");
-        }
-
-        return vagaRepository.criar(numero, andarId);
+        return vagaRepository.criar(numero);
     }
 
     async listarTodas() {
@@ -30,7 +26,7 @@ export class VagaService {
         return vaga;
     }
 
-    async atualizar(id: number, dados: Partial<{ numero: number; andarId: number }>) {
+    async atualizar(id: number, dados: Partial<{ numero: number}>) {
         await this.listarPorId(id);
         return vagaRepository.atualizar(id, dados);
     }
