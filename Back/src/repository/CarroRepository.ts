@@ -21,7 +21,7 @@ export class CarroRepository{
         )
     }
     async listarPorModelo(modelo : string){
-        return prisma.carro.findUnique({
+        return prisma.carro.findMany({
             where:{modelo}
         })
     }
@@ -35,6 +35,11 @@ export class CarroRepository{
         return prisma.carro.delete({
             where:{id}
         })
+    }
+    async buscarRegistoAtivo(carroId : number){
+        return prisma.registroEstacionamentos.findFirst({
+            where: {carroId}
+        });
     }
 
 }

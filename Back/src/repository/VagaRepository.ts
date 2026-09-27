@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
  export class VagaRepository {
     async criar(numero:number){
         return prisma.vaga.create({
-            data:{numero};
+            data:{numero}
         });
     }
     async listarTodas(){
@@ -14,13 +14,13 @@ import { PrismaClient } from "@prisma/client";
     }
     async listarPorId(id:number){
         return prisma.vaga.findUnique({
-            where:{id};
+            where:{id}
         })
     }
     async atualizar(id:number,dados:Partial<{numero:number}>){
                 return prisma.vaga.update({
             where:{id},
-            data:dados;
+            data:dados
         })
     }
     async deletar(id:number){
