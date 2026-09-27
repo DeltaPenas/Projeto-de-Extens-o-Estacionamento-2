@@ -10,8 +10,8 @@ export class CarroController{
         {
             const {placa, modelo, cor} = req.body;
 
-            if(!placa || !modelo ||!cor){
-                return res.status(400).json({ erro: "id, placa, modelo e cor são obrigatórios" });
+            if(!placa){
+                return res.status(400).json({ erro: "id e placa são obrigatórios" });
             }
 
             const carro = await carroService.criar(placa, modelo, cor);
@@ -22,6 +22,36 @@ export class CarroController{
             return res.status(400).json({erro: error.message})
         }
     }
+    async listarTodos(req: Request, res: Response)
+    {
+        try{
+            const carros = await carroService.listarTodas();
+            return res.status(200).json(carros);
+        }catch(error: any){
+            return res.status(400).json({erro: error.message})
+        }
+    }
+
+    async listarPorId(req: Request, res: Response) {
+            try {
+                const id = Number(req.params.id);
+                const carro = await carroService.listarPorId(id);
+                return res.status(200).json(carro);
+            } catch (error: any) {
+                return res.status(404).json({ erro: error.message });
+            }
+    }
+    async listarPorModelo(req : Request, res : Response){
+        try{
+            const modelo = String(req.params.modelo);
+            const carro = await carroService.listarCarroPorModelo(modelo);
+            return res.status(200).json(carro);
+
+        }catch(error: any){
+            return res.status(400).json({erro: error.message})
+        }
+    }
+
 
 
 }
