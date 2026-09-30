@@ -51,6 +51,27 @@ export class CarroController{
             return res.status(400).json({erro: error.message})
         }
     }
+    async atualizar(req: Request, res: Response) {
+            try {
+                const id = Number(req.params.id);
+                const { placa, modelo, cor } = req.body;
+    
+                const vaga = await carroService.atualizar(id, { placa, modelo, cor });
+                return res.status(200).json(vaga);
+            } catch (error: any) {
+                return res.status(400).json({ erro: error.message });
+            }
+        }
+    async deletar(req: Request, res: Response) {
+            try {
+                const id = Number(req.params.id);
+                await carroService.deletar(id);
+                return res.status(204).send();
+            } catch (error: any) {
+                return res.status(400).json({ erro: error.message });
+            }
+        }
+    
 
 
 
