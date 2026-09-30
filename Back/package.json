@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "prisma skills sync || exit 0",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma contract emit",
+    "dev": "tsx watch src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -16,13 +17,18 @@
     "@prisma/cli-engine": "^0.2.3",
     "@types/express": "^5.0.6",
     "@types/node": "^26.5.0",
-    "prisma": "^8.0.0-rc.10",
-    "tsx": "^4.23.13",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "@prisma/orm-postgres": "^8.0.0-rc.8",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
-  }
+  },
+  
+  "prisma": {
+  "schema": "src/prisma/schema.prisma"
+}
 }
