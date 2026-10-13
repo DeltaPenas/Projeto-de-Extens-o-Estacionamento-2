@@ -4,17 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "prisma skills sync || exit 0",
-    "contract:emit": "prisma contract emit",
-    "dev": "tsx watch src/server.ts"
+    
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "dev": "tsx watch src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
-    "@prisma/cli-engine": "^0.2.3",
     "@types/express": "^5.0.6",
     "@types/node": "^26.5.0",
     "prisma": "^6.19.3",
@@ -23,12 +21,10 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
-    "@prisma/orm-postgres": "^8.0.0-rc.8",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
   },
-  
   "prisma": {
-  "schema": "src/prisma/schema.prisma"
-}
+    "schema": "src/prisma/schema.prisma"
+  }
 }

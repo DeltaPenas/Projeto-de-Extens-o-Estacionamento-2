@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url     = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model Carro {
@@ -15,18 +15,9 @@ model Carro {
   registros RegistroEstacionamentos[]
 }
 
-model Andar {
-  id     Int    @id @default(autoincrement())
-  numero Int
-  vagas  Vaga[]
-}
-
 model Vaga {
   id        Int                       @id @default(autoincrement())
-  numero    Int
-
-  andar     Andar                     @relation(fields:[andarId], references:[id])
-  andarId   Int
+  numero    Int                       @unique
 
   registros RegistroEstacionamentos[]
 }
