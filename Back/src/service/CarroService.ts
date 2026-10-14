@@ -36,7 +36,7 @@ export class CarroService{
         await this.listarPorId(id);
 
         const registroAtivo = await carroRepository.buscarRegistoAtivo(id);
-        if(!registroAtivo){
+        if(registroAtivo){
             throw new Error("Não foi possivel deletar esse carro");
         }
 

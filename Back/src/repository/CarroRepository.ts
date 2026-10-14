@@ -14,7 +14,7 @@ export class CarroRepository{
         return prisma.carro.findMany();
     }
 
-    async listarPorId(id:Number){
+    async listarPorId(id:number){
         return prisma.carro.findUnique({
             where:{id}
         }
@@ -36,11 +36,14 @@ export class CarroRepository{
             where:{id}
         })
     }
-    async buscarRegistoAtivo(carroId : number){
-        return prisma.registroEstacionamentos.findFirst({
-            where: {carroId}
-        });
-    }
+    async buscarRegistoAtivo(carroId: number) {
+    return prisma.registroEstacionamentos.findFirst({
+        where: {
+            carroId: carroId,
+            saida: null
+        }
+    });
+}
 
 }
 
