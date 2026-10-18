@@ -1,0 +1,217 @@
+<div class="page" (keydown.escape)="closeDetails()">
+  <div class="eyebrow">GESTÃO DE VAGAS</div>
+  <div class="page-heading">
+    <div>
+      <h1>Estacionamento</h1>
+      <p>Explore o mapa e consulte os detalhes de cada vaga.</p>
+    </div>
+    <button
+      class="button"
+      type="button"
+      (click)="data.vagas.load()"
+      [disabled]="data.vagas.status() === 'loading'"
+    >
+      <app-icon name="refresh" />Atualizar
+    </button>
+  </div>
+
+  <div class="map-summary">
+    <span
+      ><app-icon name="parking" /><strong>{{ capacity }}</strong> posições físicas</span
+    ><i></i>
+    @switch (data.vagas.status()) {
+      @case ('success') {
+        <span
+          ><strong>{{ registered() }}</strong> cadastradas no mapa</span
+        >
+      }
+      @case ('error') {
+        <span class="summary-unavailable">Cadastro não verificado</span>
+      }
+      @default {
+        <span role="status">Consultando cadastros…</span>
+      }
+    }
+    <span class="map-summary-status"><span class="neutral-dot"></span>Ocupação não informada</span>
+  </div>
+
+  @if (data.vagas.status() === 'error') {
+    <div class="notice load-error" role="alert">
+      <app-icon name="warning" />
+      <div>
+        <strong>Não foi possível carregar as vagas.</strong>
+        <p>O desenho mostra as posições físicas. Os cadastros não puderam ser verificados.</p>
+      </div>
+      <button class="button" type="button" (click)="data.vagas.load()">Tentar novamente</button>
+    </div>
+  } @else if (data.vagas.status() === 'success' && registered() === 0) {
+    <div class="notice map-notice" role="status">
+      <app-icon name="info" />
+      <p>
+        <strong>Nenhuma posição tem cadastro correspondente.</strong> As 27 posições físicas
+        continuam disponíveis para consulta no mapa.
+      </p>
+    </div>
+  }
+  @if (data.vagas.status() === 'success' && unmapped() > 0) {
+    <div class="notice map-notice" role="status">
+      <app-icon name="info" />
+      <p>
+        {{ unmapped() }}
+        {{
+          unmapped() === 1
+            ? 'cadastro possui numeração sem correspondência'
+            : 'cadastros possuem numeração sem correspondência'
+        }}
+        com as posições físicas deste mapa.
+      </p>
+    </div>
+  }
+
+  <div class="parking-grid">
+    <section
+      class="panel map-panel"
+      aria-labelledby="map-title"
+      [attr.aria-busy]="data.vagas.status() === 'loading'"
+    >
+      <header class="panel-heading map-heading">
+        <div>
+          <h2 id="map-title">Mapa do estacionamento</h2>
+          <p>Vista superior · selecione uma posição</p>
+        </div>
+        <span class="badge">27 POSIÇÕES</span>
+      </header>
+      <app-parking-map
+        [slots]="slots()"
+        [selectedNumber]="selectedNumber()"
+        (selectSlot)="selectSlot($event)"
+      />
+      <div class="map-footnote">
+        <app-icon name="info" /><span
+          >O cadastro de uma vaga não indica que ela está livre. A disponibilidade ainda não foi
+          informada.</span
+        >
+      </div>
+    </section>
+
+    <aside id="slot-details" class="panel detail-panel" aria-labelledby="details-title">
+      <header class="panel-heading detail-heading">
+        <h2 id="details-title">Detalhes da vaga</h2>
+        @if (selected()) {
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="Fechar detalhes da vaga"
+            (click)="closeDetails()"
+          >
+            <app-icon name="close" />
+          </button>
+        }
+      </header>
+      @if (selected(); as slot) {
+        <div class="detail-content">
+          <div class="selected-slot">
+            <span class="selected-slot-icon"><app-icon name="parking" /></span>
+            <div>
+              <span>POSIÇÃO FÍSICA</span>
+              <h3>Vaga {{ slot.numero.toString().padStart(2, '0') }}</h3>
+            </div>
+          </div>
+          <span
+            class="status-label"
+            [class.status-unregistered]="slot.disponibilidade === 'nao-cadastrada'"
+            [class.status-free]="slot.disponibilidade === 'livre'"
+            [class.status-occupied]="slot.disponibilidade === 'ocupada'"
+            role="status"
+            ><span class="neutral-dot"></span
+            >{{
+              slot.cadastroVerificado ? labels[slot.disponibilidade] : 'Cadastro não verificado'
+            }}</span
+          >
+          <dl class="detail-list">
+            <div>
+              <dt>Número da vaga</dt>
+              <dd>{{ slot.numero }}</dd>
+            </div>
+            <div>
+              <dt>Localização</dt>
+              <dd>{{ slot.superior ? 'Parte superior' : 'Parte inferior' }}</dd>
+            </div>
+            @if (slot.vaga; as vaga) {
+              <div>
+                <dt>ID do cadastro</dt>
+                <dd>{{ vaga.id }}</dd>
+              </div>
+              <div>
+                <dt>Cadastro</dt>
+                <dd>Identificado</dd>
+              </div>
+            } @else {
+              <div>
+                <dt>Cadastro</dt>
+                <dd>{{ slot.cadastroVerificado ? 'Não cadastrada' : 'Não verificado' }}</dd>
+              </div>
+            }
+          </dl>
+          @if (slot.ocupacao; as ocupacao) {
+            <div class="vehicle-details">
+              <h3>Veículo</h3>
+              <dl class="detail-list">
+                <div>
+                  <dt>Placa</dt>
+                  <dd>{{ ocupacao.veiculo.placa }}</dd>
+                </div>
+                <div>
+                  <dt>Modelo</dt>
+                  <dd>{{ ocupacao.veiculo.modelo }}</dd>
+                </div>
+                <div>
+                  <dt>Cor</dt>
+                  <dd>{{ ocupacao.veiculo.cor }}</dd>
+                </div>
+              </dl>
+            </div>
+          } @else {
+            <div class="detail-note">
+              <app-icon name="info" />
+              <p>
+                {{
+                  slot.cadastroVerificado && !slot.vaga
+                    ? 'Esta posição física ainda não possui uma vaga cadastrada no sistema.'
+                    : 'Não há informações de ocupação ou veículo para esta posição.'
+                }}
+              </p>
+            </div>
+          }
+          <div class="future-actions">
+            <h3>Movimentação</h3>
+            <button
+              class="button"
+              type="button"
+              disabled
+              title="Registro de entrada ainda indisponível"
+            >
+              <app-icon name="car" />Registrar entrada</button
+            ><button
+              class="button"
+              type="button"
+              disabled
+              title="Registro de saída ainda indisponível"
+            >
+              <app-icon name="arrow" />Registrar saída
+            </button>
+            <p>Registro de entradas e saídas ainda indisponível.</p>
+          </div>
+        </div>
+      } @else {
+        <div class="detail-placeholder">
+          <span class="placeholder-icon"><app-icon name="parking" /></span>
+          <h3>Selecione uma vaga</h3>
+          <p>
+            Clique em uma posição no mapa para consultar seu número e as informações de cadastro.
+          </p>
+        </div>
+      }
+    </aside>
+  </div>
+</div>

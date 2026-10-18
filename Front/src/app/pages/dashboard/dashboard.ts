@@ -1,0 +1,45 @@
+import { DatePipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { PHYSICAL_CAPACITY } from '../../core/parking-layout';
+import { ParkingDataService } from '../../core/services/parking-data.service';
+import { Icon } from '../../shared/icon/icon';
+import { MetricCard } from '../../shared/metric-card/metric-card';
+
+function normalize(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR');
+}
+
+@Component({
+  selector: 'app-dashboard',
+  imports: [Icon, MetricCard, RouterLink, DatePipe],
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.css',
+})
+export class Dashboard {
+  protected readonly data = inject(ParkingDataService);
+  protected readonly capacity = PHYSICAL_CAPACITY;
+  protected readonly search = signal('');
+  protected readonly loading = computed(
+    () => this.data.vagas.status() === 'loading' || this.data.carros.status() === 'loading',
+  );
+  protected readonly filteredCars = computed(() => {
+    const term = normalize(this.search().trim());
+    return this.data.carros
+      .items()
+      .filter((carro) => normalize(`${carro.placa} ${carro.modelo} ${carro.cor}`).includes(term));
+  });
+
+  constructor() {
+    this.data.vagas.ensureLoaded();
+    this.data.carros.ensureLoaded();
+  }
+
+  protected refresh() {
+    this.data.vagas.load();
+    this.data.carros.load();
+  }
+}
