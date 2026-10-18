@@ -44,7 +44,6 @@ Front/
   proxy.conf.json
   start.ps1
 postman/         # Configuração de workspace; sem coleção de endpoints
-BACKEND_PENDENCIAS.md
 ```
 
 O `package.json` da raiz tem apenas uma dependência de Express, sem scripts ou workspaces. Instale e execute `Back/` e `Front/` separadamente. Detalhes dos componentes estão em [Front/README.md](Front/README.md).

@@ -59,9 +59,8 @@ física de 27 posições e quantidade cadastrada são informações distintas.
 
 ## Integração futura
 
-Ocupação, veículo e horário de entrada dependem dos contratos descritos em
-[BACKEND_PENDENCIAS.md](../BACKEND_PENDENCIAS.md). As propostas desse documento
-não são contratos já implementados.
+Ocupação, veículo e horário de entrada dependem de contratos que ainda precisam
+ser definidos e disponibilizados pelo backend.
 
 `ParkingSlot.ocupacao` é uma estrutura de apresentação futura. Os botões de
 movimentação estão desabilitados e sem handlers HTTP. Após o acordo e a entrega
