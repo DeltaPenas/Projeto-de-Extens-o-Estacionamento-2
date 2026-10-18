@@ -1,0 +1,218 @@
+<div class="page">
+  <div class="eyebrow">VISÃO GERAL</div>
+  <div class="page-heading">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Uma visão organizada do estacionamento da SEAGRI.</p>
+    </div>
+    <button class="button" type="button" (click)="refresh()" [disabled]="loading()">
+      <app-icon name="refresh" />Atualizar
+    </button>
+  </div>
+
+  <section class="metrics" aria-label="Indicadores do estacionamento">
+    <app-metric-card
+      label="Capacidade física"
+      [value]="capacity.toString()"
+      unit="vagas"
+      icon="parking"
+      description="Total de posições no estacionamento"
+    />
+    <app-metric-card
+      label="Vagas livres"
+      value="—"
+      icon="check"
+      description="Disponibilidade não informada"
+      [unavailable]="true"
+    />
+    <app-metric-card
+      label="Vagas ocupadas"
+      value="—"
+      icon="car"
+      description="Disponibilidade não informada"
+      [unavailable]="true"
+    />
+    <app-metric-card
+      label="Taxa de ocupação"
+      value="—"
+      icon="chart"
+      description="Ocupação não informada"
+      [unavailable]="true"
+    />
+  </section>
+  <div class="notice occupancy-notice">
+    <app-icon name="info" />
+    <p>
+      <strong>Disponibilidade não informada.</strong> Os indicadores de ocupação serão exibidos
+      quando essa informação estiver disponível.
+    </p>
+  </div>
+
+  <div class="dashboard-grid">
+    <section
+      class="panel vehicles-panel"
+      aria-labelledby="vehicles-title"
+      [attr.aria-busy]="data.carros.status() === 'loading'"
+    >
+      <header class="panel-heading vehicles-heading">
+        <div>
+          <h2 id="vehicles-title">Veículos cadastrados</h2>
+          <p>Consulte os veículos registrados no sistema.</p>
+        </div>
+        @if (data.carros.status() === 'success') {
+          <span class="badge badge-blue"
+            >{{ data.carros.items().length }}
+            {{ data.carros.items().length === 1 ? 'veículo' : 'veículos' }}</span
+          >
+        }
+      </header>
+      @switch (data.carros.status()) {
+        @case ('success') {
+          @if (data.carros.items().length) {
+            <div class="search-toolbar">
+              <label class="search-field"
+                ><app-icon name="search" /><span class="visually-hidden"
+                  >Buscar veículos por placa, modelo ou cor</span
+                ><input
+                  type="search"
+                  placeholder="Buscar por placa, modelo ou cor"
+                  [value]="search()"
+                  (input)="search.set($any($event.target).value)"
+              /></label>
+            </div>
+            @if (filteredCars().length) {
+              <div
+                class="table-scroll"
+                tabindex="0"
+                role="region"
+                aria-label="Lista de veículos cadastrados"
+              >
+                <table>
+                  <caption class="visually-hidden">
+                    Placa, modelo e cor dos veículos cadastrados
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">PLACA</th>
+                      <th scope="col">MODELO</th>
+                      <th scope="col">COR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (carro of filteredCars(); track carro.id) {
+                      <tr>
+                        <td>
+                          <span class="plate">{{ carro.placa }}</span>
+                        </td>
+                        <td>{{ carro.modelo }}</td>
+                        <td>{{ carro.cor }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="empty-state" role="status">
+                <app-icon name="search" />
+                <h3>Nenhum resultado encontrado</h3>
+                <p>Tente outra placa, modelo ou cor.</p>
+                <button class="button" type="button" (click)="search.set('')">Limpar busca</button>
+              </div>
+            }
+            <div class="table-footer" role="status">
+              {{ filteredCars().length }} de {{ data.carros.items().length }} veículos<span
+                >Consulta às {{ data.carros.updatedAt() | date: 'HH:mm' }}</span
+              >
+            </div>
+          } @else {
+            <div class="empty-state" role="status">
+              <app-icon name="car" />
+              <h3>Nenhum veículo cadastrado</h3>
+              <p>Os veículos aparecerão aqui quando houver cadastros no sistema.</p>
+            </div>
+          }
+        }
+        @case ('error') {
+          <div class="empty-state error-state" role="alert">
+            <app-icon name="warning" />
+            <h3>Não foi possível carregar os veículos</h3>
+            <p>Verifique a conexão e tente novamente.</p>
+            <button class="button" type="button" (click)="data.carros.load()">
+              <app-icon name="refresh" />Tentar novamente
+            </button>
+          </div>
+        }
+        @default {
+          <div class="loading-state" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando veículos…</p>
+          </div>
+        }
+      }
+    </section>
+
+    <section
+      class="panel parking-summary"
+      aria-labelledby="summary-title"
+      [attr.aria-busy]="data.vagas.status() === 'loading'"
+    >
+      <header class="panel-heading">
+        <div class="summary-icon"><app-icon name="map" /></div>
+        <h2 id="summary-title">Seu estacionamento</h2>
+        <p>Estrutura física e cadastros de vagas.</p>
+      </header>
+      <div class="summary-body">
+        <dl class="summary-list">
+          <div>
+            <dt>Capacidade física</dt>
+            <dd>{{ capacity }} vagas</dd>
+          </div>
+          <div>
+            <dt>Parte superior</dt>
+            <dd>18 posições</dd>
+          </div>
+          <div>
+            <dt>Parte inferior</dt>
+            <dd>9 posições</dd>
+          </div>
+        </dl>
+        <div class="registration-summary" aria-live="polite">
+          @switch (data.vagas.status()) {
+            @case ('success') {
+              <span class="registration-value"
+                >{{ data.vagas.items().length
+                }}<small>
+                  {{
+                    data.vagas.items().length === 1 ? 'vaga cadastrada' : 'vagas cadastradas'
+                  }}</small
+                ></span
+              >
+              @if (data.vagas.items().length === 0) {
+                <p>Nenhuma vaga foi cadastrada no sistema.</p>
+              } @else if (data.vagas.items().length !== capacity) {
+                <p>
+                  O total cadastrado difere da capacidade física. Consulte a correspondência no
+                  mapa.
+                </p>
+              } @else {
+                <p>Confira a correspondência dos cadastros no mapa.</p>
+              }
+            }
+            @case ('error') {
+              <p class="summary-error" role="alert">Não foi possível consultar as vagas.</p>
+              <button class="button" type="button" (click)="data.vagas.load()">
+                Tentar novamente
+              </button>
+            }
+            @default {
+              <p role="status">Consultando vagas cadastradas…</p>
+            }
+          }
+        </div>
+        <a class="button button-primary map-link" routerLink="/estacionamento"
+          >Explorar estacionamento<app-icon name="arrow"
+        /></a>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,95 @@
+<div
+  class="map-scroll"
+  tabindex="0"
+  role="region"
+  aria-label="Mapa com rolagem horizontal em telas pequenas"
+>
+  <svg
+    class="parking-drawing"
+    viewBox="0 0 960 444"
+    role="group"
+    aria-label="Planta interativa do estacionamento"
+    aria-describedby="parking-description"
+  >
+    <desc id="parking-description">
+      18 vagas na parte superior e 9 na inferior, com as mesmas dimensões, separadas por uma pista.
+      Use Tab para selecionar uma vaga e Enter ou Espaço para consultar.
+    </desc>
+    <defs>
+      <pattern id="uncatalogued-hatch" width="8" height="8" patternUnits="userSpaceOnUse">
+        <rect width="8" height="8" fill="#fafbfc" />
+        <path d="M-2 2 2-2 M0 8 8 0 M6 10 10 6" stroke="#e0e5ed" stroke-width="1" />
+      </pattern>
+    </defs>
+    <rect x="16" y="16" width="928" height="412" rx="12" fill="#f6f8fb" stroke="#e1e7ef" />
+    <text x="48" y="44" class="row-label">VAGAS 01–18</text>
+    <text x="480" y="419" text-anchor="middle" class="row-label">VAGAS 19–27</text>
+    <rect x="16" y="172" width="928" height="112" fill="#3e4b5e" />
+    <path
+      d="M48 228H912"
+      stroke="#ebc669"
+      stroke-width="3"
+      stroke-dasharray="20 14"
+      opacity=".95"
+    />
+    <path
+      d="M78 200h65 m-9-7 9 7-9 7 M882 256h-65 m9-7-9 7 9 7"
+      stroke="#c5cdd8"
+      stroke-width="2"
+      fill="none"
+    />
+    <text x="480" y="206" text-anchor="middle" class="lane-label">PISTA DE CIRCULAÇÃO</text>
+    @for (slot of slots(); track slot.numero) {
+      <g
+        [attr.transform]="'translate(' + slot.x + ',' + slot.y + ')'"
+        [attr.class]="'parking-slot parking-slot--' + slot.disponibilidade"
+        [class.selected]="selectedNumber() === slot.numero"
+        [attr.data-number]="slot.numero"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="accessibleLabel(slot)"
+        [attr.aria-pressed]="selectedNumber() === slot.numero"
+        aria-controls="slot-details"
+        (click)="selectSlot.emit(slot.numero)"
+        (keydown.enter)="selectSlot.emit(slot.numero)"
+        (keydown.space)="selectWithSpace($event, slot.numero)"
+      >
+        <title>{{ accessibleLabel(slot) }}</title>
+        <rect class="slot-fill" x="2" y="2" [attr.width]="width - 4" [attr.height]="height - 4" />
+        <path
+          class="bay-outline"
+          [attr.d]="slot.superior ? 'M0,104 V0 H48 V104' : 'M0,0 V104 H48 V0'"
+        />
+        <rect
+          class="selection-outline"
+          x="3"
+          y="3"
+          [attr.width]="width - 6"
+          [attr.height]="height - 6"
+          rx="3"
+        />
+        <text x="24" y="31" class="slot-number" text-anchor="middle">
+          {{ slot.numero.toString().padStart(2, '0') }}
+        </text>
+        <text x="24" y="73" class="slot-symbol" text-anchor="middle">
+          {{
+            slot.disponibilidade === 'nao-cadastrada'
+              ? '×'
+              : slot.disponibilidade === 'livre'
+                ? '✓'
+                : slot.disponibilidade === 'ocupada'
+                  ? 'P'
+                  : '?'
+          }}
+        </text>
+      </g>
+    }
+  </svg>
+</div>
+<div class="map-legend" aria-label="Legenda do mapa">
+  <span><i class="legend-dot unknown"></i>Disponibilidade não informada</span>
+  @if (hasUnregistered()) {
+    <span><i class="legend-dot unregistered"></i>Não cadastrada</span>
+  }
+  <span class="legend-help">Selecione uma vaga para ver os detalhes</span>
+</div>
