@@ -26,6 +26,15 @@ export class CarroService{
 
         return carroRepository.listarPorModelo(modelo);
     }
+    async listarPorPlaca(placa: string){
+        const carro = await carroRepository.buscarPorPlaca(placa);
+
+        if(!carro){
+            throw new Error("Carro não encontrado");
+        }
+
+        return carro;
+    }
 
     async atualizar(id: number, dados : Partial<{placa: string, modelo: string, cor : string}>){
         await this.listarPorId(id);

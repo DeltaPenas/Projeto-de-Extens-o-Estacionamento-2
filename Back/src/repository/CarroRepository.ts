@@ -44,6 +44,13 @@ export class CarroRepository{
         }
     });
 }
+async buscarPorPlaca(placa: string) {
+        return prisma.carro.findUnique({
+            where: {
+                placa: placa
+            }
+        });
+    }
 
 }
 
