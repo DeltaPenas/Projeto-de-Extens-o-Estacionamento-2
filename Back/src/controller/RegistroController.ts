@@ -32,7 +32,7 @@ export class RegistroController{
             const registro = await registroService.liberarVaga(placa);
             return res.status(200).json(registro);
         } catch (error) {
-            return responderErro(res, error);
+            return res.status(500).json({erro:"erro ao liberar vagas "})
         }
     }
 }

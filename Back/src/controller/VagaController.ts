@@ -60,4 +60,15 @@ export class VagaController {
             return res.status(400).json({ erro: error.message });
         }
     }
+
+    async listarStatus(req: Request, res: Response) {
+        try{
+            const vagas = await vagaService.listarStatus();
+            return res.status(200).json(vagas);
+        }catch (error){
+            console.error(error);
+            return res.status(500).json({erro:"erro ao listar vagas por status"})
+        }
+
+}
 }

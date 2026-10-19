@@ -35,4 +35,5 @@ async buscarRegistroAtivo(vagaId: number) {
         where: { vagaId, saida: null }
     });
 }
+
  }

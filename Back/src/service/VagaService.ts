@@ -41,4 +41,19 @@ export class VagaService {
 
         return vagaRepository.deletar(id);
     }
+
+    async listarStatus() {
+        const vagas = await vagaRepository.listarTodas();
+        const resultado : { id: number; numero: number; status: boolean }[] = [];
+        for (const vaga of vagas){
+            const registroAtivo = await vagaRepository.buscarRegistroAtivo(vaga.id);
+            resultado.push({
+                id: vaga.id,
+                numero:vaga.numero,
+                status:registroAtivo ? true : false
+            });
+
+        }
+        return resultado;
+    }
 }
