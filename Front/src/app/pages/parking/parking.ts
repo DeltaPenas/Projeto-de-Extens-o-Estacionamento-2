@@ -1,4 +1,4 @@
-import { DOCUMENT } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { PHYSICAL_CAPACITY } from '../../core/parking-layout';
 import { ParkingDataService } from '../../core/services/parking-data.service';
@@ -12,7 +12,7 @@ import {
 
 @Component({
   selector: 'app-parking',
-  imports: [Icon, ParkingMap],
+  imports: [Icon, ParkingMap, DatePipe],
   templateUrl: './parking.html',
   styleUrl: './parking.css',
 })
@@ -23,7 +23,7 @@ export class Parking {
   protected readonly labels = SLOT_LABELS;
   protected readonly selectedNumber = signal<number | null>(null);
   protected readonly slots = computed(() =>
-    associateSlots(this.data.vagas.items(), this.data.vagas.status() === 'success'),
+    associateSlots(this.data.vagasComDisponibilidade(), this.data.vagas.status() === 'success'),
   );
   protected readonly selected = computed(
     () => this.slots().find((slot) => slot.numero === this.selectedNumber()) ?? null,
@@ -35,7 +35,7 @@ export class Parking {
   });
 
   constructor() {
-    this.data.vagas.ensureLoaded();
+    this.data.ensureParkingLoaded();
   }
 
   protected selectSlot(numero: number) {

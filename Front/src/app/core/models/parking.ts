@@ -3,6 +3,15 @@ export interface Vaga {
   numero: number;
 }
 
+export interface VagaStatus extends Vaga {
+  // Contrato de GET /vagas/status: true significa ocupada.
+  status: boolean;
+}
+
+export interface VagaComDisponibilidade extends Vaga {
+  disponibilidade: Exclude<Disponibilidade, 'nao-cadastrada'>;
+}
+
 export interface Carro {
   id: number;
   placa: string;
@@ -10,7 +19,7 @@ export interface Carro {
   cor: string;
 }
 
-// Estados da interface; GET /vagas ainda não informa ocupação.
+// Cadastro e ocupação são consultados separadamente.
 export type Disponibilidade = 'livre' | 'ocupada' | 'desconhecida' | 'nao-cadastrada';
 
 export interface DetalhesOcupacao {

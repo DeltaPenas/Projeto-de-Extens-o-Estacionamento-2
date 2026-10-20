@@ -1,5 +1,10 @@
 import { Component, computed, input, output } from '@angular/core';
-import { DetalhesOcupacao, Disponibilidade, Vaga } from '../../core/models/parking';
+import {
+  DetalhesOcupacao,
+  Disponibilidade,
+  Vaga,
+  VagaComDisponibilidade,
+} from '../../core/models/parking';
 import { PARKING_ROWS, SLOT_HEIGHT, SLOT_WIDTH } from '../../core/parking-layout';
 
 export interface ParkingPosition {
@@ -25,7 +30,10 @@ export const PARKING_POSITIONS: ParkingPosition[] = PARKING_ROWS.flatMap((row) =
   })),
 );
 
-export function associateSlots(vagas: Vaga[], cadastroVerificado: boolean): ParkingSlot[] {
+export function associateSlots(
+  vagas: VagaComDisponibilidade[],
+  cadastroVerificado: boolean,
+): ParkingSlot[] {
   const byNumber = new Map(vagas.map((vaga) => [vaga.numero, vaga]));
   return PARKING_POSITIONS.map((position) => {
     const vaga = cadastroVerificado ? byNumber.get(position.numero) : undefined;
@@ -33,7 +41,8 @@ export function associateSlots(vagas: Vaga[], cadastroVerificado: boolean): Park
       ...position,
       vaga,
       cadastroVerificado,
-      disponibilidade: cadastroVerificado && !vaga ? 'nao-cadastrada' : 'desconhecida',
+      disponibilidade:
+        vaga?.disponibilidade ?? (cadastroVerificado ? 'nao-cadastrada' : 'desconhecida'),
     };
   });
 }

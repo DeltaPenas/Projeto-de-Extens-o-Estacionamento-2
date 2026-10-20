@@ -51,18 +51,18 @@
   stroke: transparent;
   stroke-width: 2;
 }
-.parking-slot:hover .slot-fill {
+.parking-slot--desconhecida:hover .slot-fill {
   fill: #dce6f5;
 }
-.parking-slot.selected .slot-fill {
+.parking-slot--desconhecida.selected .slot-fill {
   fill: #e0ebff;
 }
 .parking-slot.selected .selection-outline,
 .parking-slot:focus-visible .selection-outline {
   stroke: var(--blue);
 }
-.parking-slot.selected .slot-number,
-.parking-slot.selected .slot-symbol {
+.parking-slot--desconhecida.selected .slot-number,
+.parking-slot--desconhecida.selected .slot-symbol {
   fill: var(--blue);
 }
 .parking-slot--nao-cadastrada .slot-fill {
@@ -109,6 +109,14 @@
 }
 .unknown {
   background: #e8edf4;
+}
+.free {
+  background: #e2f3e9;
+  border-color: #24734a;
+}
+.occupied {
+  background: #fbe8e8;
+  border-color: #b23737;
 }
 .unregistered {
   background: repeating-linear-gradient(135deg, #fff, #fff 2px, #ccd5e0 2px, #ccd5e0 3px);
