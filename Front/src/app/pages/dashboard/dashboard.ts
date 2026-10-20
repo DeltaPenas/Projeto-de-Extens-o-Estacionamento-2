@@ -24,8 +24,12 @@ export class Dashboard {
   protected readonly capacity = PHYSICAL_CAPACITY;
   protected readonly search = signal('');
   protected readonly loading = computed(
-    () => this.data.vagas.status() === 'loading' || this.data.carros.status() === 'loading',
+    () => this.data.parkingLoading() || this.data.carros.status() === 'loading',
   );
+  protected readonly occupancyRate = computed(() => {
+    const rate = this.data.occupancyMetrics()?.rate;
+    return rate == null ? '—' : `${rate.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+  });
   protected readonly filteredCars = computed(() => {
     const term = normalize(this.search().trim());
     return this.data.carros
@@ -34,12 +38,12 @@ export class Dashboard {
   });
 
   constructor() {
-    this.data.vagas.ensureLoaded();
+    this.data.ensureParkingLoaded();
     this.data.carros.ensureLoaded();
   }
 
   protected refresh() {
-    this.data.vagas.load();
+    this.data.refreshParking();
     this.data.carros.load();
   }
 }

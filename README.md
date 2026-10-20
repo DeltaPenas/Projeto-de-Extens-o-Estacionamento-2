@@ -4,9 +4,9 @@ Projeto de extensão universitária desenvolvido para auxiliar na organização 
 
 ## Estado atual
 
-O frontend oferece Dashboard, consulta e busca local de veículos, mapa SVG interativo, painel de detalhes e tratamento de carregamento, erro e listas vazias. A associação usa `vaga.numero`; o ID do banco permanece separado.
+O frontend oferece Dashboard com indicadores de ocupação, consulta e busca local de veículos, mapa SVG interativo com vagas livres e ocupadas, painel de detalhes e tratamento de carregamento, erro e listas vazias. A associação usa `vaga.numero`; o ID do banco permanece separado.
 
-A API possui cadastros de vagas e veículos implementados no código. **Consulta de ocupação e operações de entrada e saída ainda dependem de ajustes no backend.** Os indicadores mostram `—`, as vagas cadastradas têm disponibilidade desconhecida e as ações de movimentação estão desabilitadas. Não há dados de demonstração na aplicação.
+A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. **As ações de entrada e saída permanecem desabilitadas**, aguardando as correções e consultas necessárias no backend. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
 
 ## Tecnologias e pré-requisitos
 
@@ -126,7 +126,7 @@ API: **http://localhost:3000**. A porta é fixa em `Back/src/server.ts`; não h�
 Invoke-RestMethod http://localhost:3000/vagas
 ```
 
-A execução com PostgreSQL não foi validada nesta entrega; as pendências incluem falhas de contratos, tipos e artefatos de banco.
+As consultas de vagas, ocupação e veículos podem ser verificadas com a API e o PostgreSQL locais. Os cadastros disponíveis dependem do banco configurado; não há seed versionado de vagas ou veículos.
 
 ### 5. Iniciar o frontend
 
@@ -156,27 +156,29 @@ npm run build
 npm test -- --watch=false
 ```
 
-Saída do build: `Front/dist/estacionamento/`. Na etapa anterior, o build passou sem avisos e os 12 testes passaram; desktop e celular foram conferidos. Os cenários de sucesso utilizaram fixtures exclusivas de teste, sem validação com PostgreSQL real.
+Saída do build: `Front/dist/estacionamento/`. Os testes cobrem navegação, consulta compartilhada, busca de veículos, associação entre número e ID, cores do mapa, indicadores, atualização, falhas independentes e respostas de ocupação inválidas ou incompletas. Fixtures ficam restritas aos testes.
 
 Em `Back/`, **`npm test` é um placeholder e encerra com erro**; ainda não existe suíte de testes. Não há scripts de build ou start de produção no backend.
 
 ## Integração e principais rotas
 
-O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/carros` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama apenas `GET /vagas` e `GET /carros`.
+O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status` e `GET /carros`.
 
-| Rotas existentes                                        | Situação                                               |
-| ------------------------------------------------------- | ------------------------------------------------------ |
-| `GET /vagas`, `GET /vagas/:id`                          | ID e número; sem ocupação                              |
-| `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código |
-| `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                   |
-| `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código |
-| `POST /registros/entrada`, `POST /registros/saida`      | Declaradas, com falhas confirmadas; não integradas     |
+| Rotas existentes                                        | Situação                                                          |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
+| `GET /vagas`, `GET /vagas/:id`                          | ID e número; sem ocupação                                         |
+| `GET /vagas/status`                                     | ID, número e status booleano; integrado ao mapa e aos indicadores |
+| `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código            |
+| `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                              |
+| `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código            |
+| `POST /registros/entrada`, `POST /registros/saida`      | Entrada com pendências; movimentações não integradas              |
 
 O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à API na mesma origem ou configure outra origem com CORS. Não há autenticação ou configuração de CORS na API atual.
 
 ## Limitações e próximas entregas
 
-- Não existe consulta HTTP de ocupação, veículo estacionado ou horário de entrada.
-- Entrada e saída precisam de correções antes de habilitar as ações no frontend.
-- Não há endpoint de histórico ou seed das vagas; o cadastro real no banco não foi confirmado.
+- A consulta de ocupação não informa o veículo estacionado nem o horário de entrada; esses detalhes dependem de um contrato de consulta no backend.
+- A entrada ainda precisa de correções para reutilizar vagas após a saída e garantir as regras em requisições simultâneas. As movimentações não estão integradas ao frontend.
+- Não há endpoint de histórico nem seed versionado dos cadastros.
 - Uma posição só aparece como “Não cadastrada” após consulta bem-sucedida sem registro correspondente. Falhas permanecem como cadastro não verificado.
+- O botão Atualizar refaz as consultas; não há atualização automática. O estado compartilhado mantém mapa e Dashboard coerentes ao navegar entre as páginas.
