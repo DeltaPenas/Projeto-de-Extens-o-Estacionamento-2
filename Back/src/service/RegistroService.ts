@@ -7,29 +7,42 @@ const vagaRepository = new VagaRepository();
 const registroRepository = new RegistroRepository();
 
 export class RegistroService{
-    async ocuparVaga(placa:string, vagaId:number){
-    const carro = await carroRepository.buscarPorPlaca(placa);
-    if(!carro){
-        throw new Error("carro não encontrado");
-    }
     
-    const vaga = await vagaRepository.listarPorId(vagaId);
-    if(!vaga){
-        throw new Error("vaga não encontrada");
-    }
-    const registroAtivoVaga = await registroRepository.buscarAtivoPorVaga(vagaId);
-    if(registroAtivoVaga){
-        throw new Error("vaga ocupada");
+    async ocuparVaga(carroId: number, vagaId: number) {
+        const carro = await carroRepository.listarPorId(carroId);
+
+        if (!carro) {
+            throw new Error("Carro não encontrado");
+        }
+
+        const vaga = await vagaRepository.listarPorId(vagaId);
+
+        if (!vaga) {
+            throw new Error("Vaga não encontrada");
+        }
+
+        const registroAtivoVaga =
+            await registroRepository.buscarAtivoPorVaga(vagaId);
+
+        if (registroAtivoVaga) {
+            throw new Error("Vaga já está ocupada");
+        }
+
+        const registroAtivoCarro =
+            await registroRepository.buscarAtivoPorCarro(carroId);
+
+        if (registroAtivoCarro) {
+            throw new Error("Carro já possui uma entrada ativa");
+        }
+
+        const novoRegistro = await registroRepository.registrarEntrada(
+            carro.id,
+            vaga.id
+        );
+
+        return novoRegistro;
     }
 
-    const registroAtivoCarro = await registroRepository.buscarAtivoPorPlaca(placa);
-    if(registroAtivoCarro){
-        throw new Error("carro já está em uma vaga");
-    }
-
-    const novoRegistro = await registroRepository.registrarEntrada(carro.id, vaga.id);
-    return novoRegistro;
-}
 
    async liberarVaga(placa: string) {
         const registroAtivo = await registroRepository.buscarAtivoPorPlaca(placa);

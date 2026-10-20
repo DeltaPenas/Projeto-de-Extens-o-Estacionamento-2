@@ -5,7 +5,8 @@ export class RegistroRepository{
     async buscarAtivoPorVaga(vagaId:number){
         return prisma.registroEstacionamentos.findFirst({
             where:{
-                vagaId:vagaId
+                vagaId:vagaId,
+                saida : null
             }
         })
     }
@@ -13,7 +14,8 @@ export class RegistroRepository{
     async buscarAtivoPorCarro(carroId:number){
         return prisma.registroEstacionamentos.findFirst({
             where:{
-                carroId:carroId
+                carroId:carroId,
+                saida : null
             }
         })
     }
