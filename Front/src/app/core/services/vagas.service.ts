@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Vaga } from '../models/parking';
+import { Vaga, VagaStatus } from '../models/parking';
 import { API_BASE_URL } from './api.config';
 
 @Injectable({ providedIn: 'root' })
@@ -10,6 +10,10 @@ export class VagasService {
 
   listar() {
     return this.http.get<Vaga[]>(this.url);
+  }
+
+  listarStatus() {
+    return this.http.get<VagaStatus[]>(`${this.url}/status`);
   }
 
   buscarPorId(id: Vaga['id']) {

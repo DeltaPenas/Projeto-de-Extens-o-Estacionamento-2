@@ -5,6 +5,11 @@
 }
 .occupancy-notice {
   margin: 19px 0 28px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.occupancy-notice p {
+  flex: 1 1 240px;
 }
 .dashboard-grid {
   display: grid;

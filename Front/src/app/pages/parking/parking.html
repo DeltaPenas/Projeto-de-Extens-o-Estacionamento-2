@@ -8,8 +8,8 @@
     <button
       class="button"
       type="button"
-      (click)="data.vagas.load()"
-      [disabled]="data.vagas.status() === 'loading'"
+      (click)="data.refreshParking()"
+      [disabled]="data.parkingLoading()"
     >
       <app-icon name="refresh" />Atualizar
     </button>
@@ -32,7 +32,18 @@
         <span role="status">Consultando cadastros…</span>
       }
     }
-    <span class="map-summary-status"><span class="neutral-dot"></span>Ocupação não informada</span>
+    <span class="map-summary-status" role="status">
+      <span class="neutral-dot"></span>
+      @if (data.parkingLoading()) {
+        Consultando ocupação…
+      } @else if (data.occupancyMetrics()) {
+        Ocupação consultada às {{ data.ocupacao.updatedAt() | date: 'HH:mm' }}
+      } @else if (data.ocupacao.status() === 'success' && data.vagas.status() === 'success') {
+        Ocupação parcialmente informada
+      } @else {
+        Ocupação não informada
+      }
+    </span>
   </div>
 
   @if (data.vagas.status() === 'error') {
@@ -50,6 +61,27 @@
       <p>
         <strong>Nenhuma posição tem cadastro correspondente.</strong> As 27 posições físicas
         continuam disponíveis para consulta no mapa.
+      </p>
+    </div>
+  }
+  @if (data.ocupacao.status() === 'error') {
+    <div class="notice load-error occupancy-error" role="alert">
+      <app-icon name="warning" />
+      <div>
+        <strong>Não foi possível consultar a ocupação.</strong>
+        <p>As vagas cadastradas ficam com disponibilidade não informada até uma nova consulta.</p>
+      </div>
+      <button class="button" type="button" (click)="data.ocupacao.load()">Tentar novamente</button>
+    </div>
+  } @else if (data.ocupacao.status() === 'success' && data.occupancySummary().unknown > 0) {
+    <div class="notice map-notice" role="status">
+      <app-icon name="info" />
+      <p>
+        <strong>Ocupação parcialmente informada.</strong>
+        O status de {{ data.occupancySummary().unknown }}
+        {{ data.occupancySummary().unknown === 1 ? 'vaga cadastrada' : 'vagas cadastradas' }}
+        no mapa ainda não foi confirmado. As posições sem status permanecem em cinza. Atualize a
+        consulta para tentar novamente.
       </p>
     </div>
   }
@@ -72,7 +104,7 @@
     <section
       class="panel map-panel"
       aria-labelledby="map-title"
-      [attr.aria-busy]="data.vagas.status() === 'loading'"
+      [attr.aria-busy]="data.parkingLoading()"
     >
       <header class="panel-heading map-heading">
         <div>
@@ -88,8 +120,8 @@
       />
       <div class="map-footnote">
         <app-icon name="info" /><span
-          >O cadastro de uma vaga não indica que ela está livre. A disponibilidade ainda não foi
-          informada.</span
+          >Os estados refletem a última consulta. Use Atualizar para consultar novamente. Posições
+          sem cadastro e vagas sem status confirmado não são consideradas livres.</span
         >
       </div>
     </section>
@@ -178,7 +210,11 @@
                 {{
                   slot.cadastroVerificado && !slot.vaga
                     ? 'Esta posição física ainda não possui uma vaga cadastrada no sistema.'
-                    : 'Não há informações de ocupação ou veículo para esta posição.'
+                    : slot.disponibilidade === 'ocupada'
+                      ? 'Vaga ocupada. Os dados do veículo e o horário de entrada ainda não estão disponíveis.'
+                      : slot.disponibilidade === 'livre'
+                        ? 'Vaga livre na última consulta.'
+                        : 'A disponibilidade desta vaga ainda não pôde ser verificada.'
                 }}
               </p>
             </div>

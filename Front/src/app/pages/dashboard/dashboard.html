@@ -10,7 +10,11 @@
     </button>
   </div>
 
-  <section class="metrics" aria-label="Indicadores do estacionamento">
+  <section
+    class="metrics"
+    aria-label="Indicadores do estacionamento"
+    [attr.aria-busy]="data.parkingLoading()"
+  >
     <app-metric-card
       label="Capacidade física"
       [value]="capacity.toString()"
@@ -20,32 +24,60 @@
     />
     <app-metric-card
       label="Vagas livres"
-      value="—"
+      [value]="data.occupancyMetrics()?.free?.toString() ?? '—'"
       icon="check"
-      description="Disponibilidade não informada"
-      [unavailable]="true"
+      [description]="
+        data.occupancyMetrics() ? 'Vagas cadastradas no mapa' : 'Disponibilidade não informada'
+      "
+      [unavailable]="data.occupancyMetrics() === null"
     />
     <app-metric-card
       label="Vagas ocupadas"
-      value="—"
+      [value]="data.occupancyMetrics()?.occupied?.toString() ?? '—'"
       icon="car"
-      description="Disponibilidade não informada"
-      [unavailable]="true"
+      [description]="
+        data.occupancyMetrics() ? 'Vagas cadastradas no mapa' : 'Disponibilidade não informada'
+      "
+      [unavailable]="data.occupancyMetrics() === null"
     />
     <app-metric-card
       label="Taxa de ocupação"
-      value="—"
+      [value]="occupancyRate()"
       icon="chart"
-      description="Ocupação não informada"
-      [unavailable]="true"
+      description="Sobre as vagas cadastradas no mapa"
+      [unavailable]="data.occupancyMetrics()?.rate == null"
     />
   </section>
-  <div class="notice occupancy-notice">
+  <div class="notice occupancy-notice" role="status">
     <app-icon name="info" />
-    <p>
-      <strong>Disponibilidade não informada.</strong> Os indicadores de ocupação serão exibidos
-      quando essa informação estiver disponível.
-    </p>
+    @if (data.parkingLoading()) {
+      <p>Consultando a ocupação das vagas…</p>
+    } @else if (data.ocupacao.status() === 'error') {
+      <p>
+        <strong>Não foi possível consultar a ocupação.</strong> Os indicadores estão indisponíveis.
+      </p>
+      <button class="button" type="button" (click)="data.ocupacao.load()">Tentar novamente</button>
+    } @else if (data.vagas.status() === 'error') {
+      <p>
+        Os indicadores estão indisponíveis porque os cadastros de vagas não puderam ser verificados.
+      </p>
+    } @else if (data.occupancySummary().unknown > 0) {
+      <p>
+        <strong>Ocupação parcialmente informada.</strong>
+        O status de {{ data.occupancySummary().unknown }}
+        {{ data.occupancySummary().unknown === 1 ? 'vaga cadastrada' : 'vagas cadastradas' }}
+        no mapa ainda não foi confirmado. Atualize a consulta para obter os indicadores.
+      </p>
+      <button class="button" type="button" (click)="data.refreshParking()">Tentar novamente</button>
+    } @else if (data.occupancySummary().total === 0) {
+      <p>Nenhuma vaga cadastrada corresponde ao mapa. A taxa de ocupação está indisponível.</p>
+    } @else {
+      <p>
+        <strong>Ocupação consultada às {{ data.ocupacao.updatedAt() | date: 'HH:mm' }}.</strong>
+        Os indicadores consideram {{ data.occupancySummary().total }} vagas cadastradas no mapa, de
+        {{ capacity }} posições físicas. Use Atualizar para consultar novamente.
+      </p>
+    }
   </div>
 
   <div class="dashboard-grid">
