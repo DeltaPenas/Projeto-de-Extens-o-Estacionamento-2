@@ -88,8 +88,9 @@ export class ParkingDataService {
   }
 
   refreshParking() {
-    this.vagas.load();
-    this.ocupacao.load();
+    // Uma entrada pode terminar enquanto uma consulta anterior ainda está em andamento.
+    this.vagas.reload();
+    this.ocupacao.reload();
   }
 
   constructor() {

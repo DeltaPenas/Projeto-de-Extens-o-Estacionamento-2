@@ -14,7 +14,7 @@ src/app/
     services/                      # HTTP e estado compartilhado das consultas
   pages/
     dashboard/                     # Indicadores e veículos cadastrados
-    parking/                       # Associação das vagas e painel de detalhes
+    parking/                       # Mapa, painel, formulário e confirmação de entrada
   shared/
     icon/                          # Ícones SVG sem dependência externa
     metric-card/                   # Cards reutilizáveis
@@ -25,7 +25,7 @@ src/app/
 ## Integração atual
 
 - `VagasService`: `GET /vagas` e `GET /vagas/status`, usados nas duas páginas.
-- `CarrosService`: `GET /carros`, para consulta e busca local no Dashboard.
+- `CarrosService`: `GET /carros`, para consulta e busca local no Dashboard e seleção no formulário de entrada.
 - Os dois services também oferecem consulta por ID nas rotas existentes; selecionar
   uma vaga já carregada não provoca uma requisição adicional.
 - `API_BASE_URL`, em `core/services/api.config.ts`, permite configurar outra origem;
@@ -36,8 +36,9 @@ src/app/
 - A associação do status ao cadastro exige ID e número correspondentes. O contrato
   de ocupação é `{ id, numero, status }`, com booleano obrigatório: `true` significa
   ocupada e `false`, livre. Dados de veículo ou horário não são inferidos.
-- `RegistrosService` é somente o ponto de extensão, com operações indisponíveis.
-  Não faz chamadas de entrada, saída ou consultas inexistentes.
+- `RegistrosService`: `POST /registros/entrada`, com o contrato atual em minúsculas:
+  `{ carroid: number, vagaid: number }`. Os valores são IDs do banco, não números físicos.
+  A saída e a consulta dos detalhes da ocupação ainda não são integradas.
 
 ## Convenção física e disponibilidade
 
@@ -81,20 +82,51 @@ Veículo estacionado e horário de entrada dependem de um contrato de consulta q
 ainda precisa ser disponibilizado pelo backend. `GET /vagas/status` informa
 somente a disponibilidade.
 
-`ParkingSlot.ocupacao` é uma estrutura de apresentação futura. Os botões de
-movimentação estão desabilitados e sem handlers HTTP. Após o acordo e a entrega
-do backend, uma nova etapa deverá atualizar tipos, mapear os campos reais e
-habilitar as operações. Campos extras na API não alteram automaticamente o mapa.
+`ParkingSlot.ocupacao` é uma estrutura de apresentação futura. A saída permanece
+desabilitada. Campos extras na API não alteram automaticamente os detalhes do mapa.
+
+## Registro de entrada
+
+Selecionar uma vaga cadastrada com status livre confirmado apresenta o formulário
+no painel de detalhes. Os veículos são carregados sob demanda e compartilhados
+com o Dashboard. Há estados de carregamento, erro, lista vazia e atualização da
+lista. O veículo é obrigatório; o frontend não filtra veículos estacionados sem
+uma consulta que forneça essa informação. Um conflito retornado pelo backend é
+apresentado na interface.
+
+O envio captura o veículo e a vaga selecionados e bloqueia uma segunda entrada
+enquanto a operação está pendente. A requisição pertence ao service da sessão:
+trocar de vaga ou navegar para o Dashboard não cancela o envio nem troca seu destino.
+Não há repetição automática do POST. Falhas de conexão ou timeout não são tratadas
+como certeza de que nada foi gravado; a interface informa que a confirmação está
+pendente e refaz as consultas.
+
+Um `201` confirma o cadastro da entrada. A resposta completa é validada antes de
+exibir ID do registro, número da vaga, placa, modelo, cor e horário do servidor.
+Uma resposta incompleta mantém a confirmação do `201`, sem inventar detalhes.
+O aviso identifica a última operação, permanece ao navegar entre as páginas e
+pode ser dispensado. Ele não representa uma consulta do ocupante atual e não é
+persistido após recarregar o navegador.
+
+Após a resposta, cadastro e ocupação são consultados novamente, substituindo
+consultas anteriores ainda em andamento para evitar dados anteriores à entrada.
+Mapa, painel e indicadores compartilham esse resultado. Falhas nessa atualização
+mantêm a confirmação da entrada e oferecem nova tentativa de consulta, sem
+reenviar a operação.
+
+O backend ainda precisa garantir exclusividade em requisições simultâneas de
+outros clientes. O bloqueio local de envio duplicado não resolve essa pendência.
 
 ## Verificação existente
 
-Nesta integração, o build de produção passou sem avisos e os 21 testes passaram.
-O Edge foi conferido em desktop (1440 px) e celular (390 px), consumindo API e
-PostgreSQL locais. Cenários com ocupação mista, erro e recuperação também foram
-conferidos com fixtures exclusivas de teste, sem operações de escrita na API.
+O fluxo de entrada foi conferido no Edge em desktop (1440 px) e celular (390 px),
+com as rotas reais e PostgreSQL em banco temporário. Foram validados gravação,
+confirmação, mapa, indicadores, conflito e recuperação de falha na atualização.
+O banco temporário foi removido e os cadastros locais de demonstração preservados.
 
 Os testes cobrem navegação e reaproveitamento de consultas, falhas independentes,
 recuperação, busca, distinção entre número e ID, interpretação de `true`/`false`,
-indicadores, respostas inválidas ou parciais e atualização compartilhada entre as
-páginas. Fixtures ficam restritas aos testes. Não há dados mockados na aplicação.
+indicadores, respostas inválidas ou parciais, envio de entrada com IDs, bloqueio de
+duplicidade, confirmação, falhas e navegação durante o envio. Fixtures ficam
+restritas aos testes. Não há dados mockados na aplicação.
 Consulte os comandos de build e testes no README principal.

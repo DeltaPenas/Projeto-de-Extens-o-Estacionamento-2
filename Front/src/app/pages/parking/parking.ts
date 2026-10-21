@@ -2,6 +2,9 @@ import { DatePipe, DOCUMENT } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { PHYSICAL_CAPACITY } from '../../core/parking-layout';
 import { ParkingDataService } from '../../core/services/parking-data.service';
+import { RegistrosService } from '../../core/services/registros.service';
+import { EntryForm } from './entry-form/entry-form';
+import { EntryFeedback } from './entry-feedback/entry-feedback';
 import { Icon } from '../../shared/icon/icon';
 import {
   associateSlots,
@@ -12,13 +15,14 @@ import {
 
 @Component({
   selector: 'app-parking',
-  imports: [Icon, ParkingMap, DatePipe],
+  imports: [Icon, ParkingMap, DatePipe, EntryForm, EntryFeedback],
   templateUrl: './parking.html',
   styleUrl: './parking.css',
 })
 export class Parking {
   private readonly document = inject(DOCUMENT);
   protected readonly data = inject(ParkingDataService);
+  protected readonly registros = inject(RegistrosService);
   protected readonly capacity = PHYSICAL_CAPACITY;
   protected readonly labels = SLOT_LABELS;
   protected readonly selectedNumber = signal<number | null>(null);

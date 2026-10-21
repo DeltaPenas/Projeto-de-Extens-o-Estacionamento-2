@@ -1,0 +1,70 @@
+<section class="entry-section" aria-labelledby="entry-title">
+  <h3 id="entry-title">Registrar entrada</h3>
+  @switch (data.carros.status()) {
+    @case ('success') {
+      @if (data.carros.items().length) {
+        <form
+          class="entry-form"
+          (submit)="submit($event)"
+          novalidate
+          [attr.aria-busy]="registros.registrandoEntrada()"
+        >
+          <fieldset [disabled]="registros.registrandoEntrada()">
+            <legend class="visually-hidden">Entrada de veículo na vaga {{ vaga().numero }}</legend>
+            <label for="entry-car">Veículo cadastrado</label>
+            <select
+              id="entry-car"
+              [formControl]="carroId"
+              required
+              [attr.aria-invalid]="carroId.touched && carroId.invalid ? 'true' : null"
+              aria-describedby="entry-help entry-validation"
+            >
+              <option value="">Selecione um veículo</option>
+              @for (carro of data.carros.items(); track carro.id) {
+                <option [value]="carro.id">
+                  {{ carro.placa }} · {{ carro.modelo }} · {{ carro.cor }}
+                </option>
+              }
+            </select>
+            <p id="entry-help">
+              Confirme a entrada do veículo na vaga {{ vaga().numero.toString().padStart(2, '0') }}.
+            </p>
+            <p id="entry-validation" class="field-error" role="status">
+              @if (carroId.touched && carroId.invalid) {
+                Selecione um veículo para continuar.
+              }
+            </p>
+            <button
+              class="button button-primary"
+              type="submit"
+              [disabled]="registros.registrandoEntrada()"
+            >
+              <app-icon name="car" />{{
+                registros.registrandoEntrada() ? 'Registrando entrada…' : 'Confirmar entrada'
+              }}
+            </button>
+          </fieldset>
+        </form>
+      } @else {
+        <p class="entry-message" role="status">
+          Nenhum veículo cadastrado. Cadastre um veículo antes de registrar uma entrada.
+        </p>
+      }
+      <button
+        class="button refresh-cars"
+        type="button"
+        (click)="data.carros.load()"
+        [disabled]="registros.registrandoEntrada()"
+      >
+        Atualizar veículos
+      </button>
+    }
+    @case ('error') {
+      <p class="entry-message" role="alert">Não foi possível carregar os veículos.</p>
+      <button class="button" type="button" (click)="data.carros.load()">Tentar novamente</button>
+    }
+    @default {
+      <p class="entry-message" role="status">Carregando veículos…</p>
+    }
+  }
+</section>
