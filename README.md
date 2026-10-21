@@ -4,9 +4,9 @@ Projeto de extensão universitária desenvolvido para auxiliar na organização 
 
 ## Estado atual
 
-O frontend oferece Dashboard com indicadores de ocupação, consulta e busca local de veículos, mapa SVG interativo com vagas livres e ocupadas, painel de detalhes e tratamento de carregamento, erro e listas vazias. A associação usa `vaga.numero`; o ID do banco permanece separado.
+O frontend oferece Dashboard com indicadores de ocupação, consulta e busca local de veículos, mapa SVG interativo com vagas livres e ocupadas, painel de detalhes e formulário de entrada com seleção de veículo cadastrado. A associação usa `vaga.numero`; o ID do banco permanece separado.
 
-A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. **As ações de entrada e saída permanecem desabilitadas**, aguardando as correções e consultas necessárias no backend. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
+A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. **O registro de entrada está integrado**: o sucesso apresenta a confirmação e refaz as consultas do mapa e dos indicadores. A saída permanece desabilitada. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
 
 ## Tecnologias e pré-requisitos
 
@@ -162,23 +162,26 @@ Em `Back/`, **`npm test` é um placeholder e encerra com erro**; ainda não exis
 
 ## Integração e principais rotas
 
-O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status` e `GET /carros`.
+O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros` e `POST /registros/entrada`.
 
-| Rotas existentes                                        | Situação                                                          |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| `GET /vagas`, `GET /vagas/:id`                          | ID e número; sem ocupação                                         |
-| `GET /vagas/status`                                     | ID, número e status booleano; integrado ao mapa e aos indicadores |
-| `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código            |
-| `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                              |
-| `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código            |
-| `POST /registros/entrada`, `POST /registros/saida`      | Entrada com pendências; movimentações não integradas              |
+| Rotas existentes                                        | Situação                                                              |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| `GET /vagas`, `GET /vagas/:id`                          | ID e número; sem ocupação                                             |
+| `GET /vagas/status`                                     | ID, número e status booleano; integrado ao mapa e aos indicadores     |
+| `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código                |
+| `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                                  |
+| `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código                |
+| `POST /registros/entrada`                               | Integrado com `{ carroid, vagaid }`; concorrência pendente no backend |
+| `POST /registros/saida`                                 | Recebe placa; não integrado ao frontend                               |
 
 O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à API na mesma origem ou configure outra origem com CORS. Não há autenticação ou configuração de CORS na API atual.
 
 ## Limitações e próximas entregas
 
 - A consulta de ocupação não informa o veículo estacionado nem o horário de entrada; esses detalhes dependem de um contrato de consulta no backend.
-- A entrada ainda precisa de correções para reutilizar vagas após a saída e garantir as regras em requisições simultâneas. As movimentações não estão integradas ao frontend.
+- O backend permite reutilizar vagas após a saída, mas ainda precisa garantir uma entrada ativa por vaga e por veículo em requisições simultâneas. O bloqueio de envio duplicado no frontend se aplica somente à sessão atual.
+- A confirmação da última entrada mostra o registro, a vaga, o veículo e o horário retornados pela operação. Ela fica apenas na sessão e não substitui uma consulta do ocupante atual.
+- A saída e a página de cadastro de veículos continuam para entregas próprias.
 - Não há endpoint de histórico nem seed versionado dos cadastros.
 - Uma posição só aparece como “Não cadastrada” após consulta bem-sucedida sem registro correspondente. Falhas permanecem como cadastro não verificado.
 - O botão Atualizar refaz as consultas; não há atualização automática. O estado compartilhado mantém mapa e Dashboard coerentes ao navegar entre as páginas.

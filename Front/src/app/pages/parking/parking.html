@@ -9,11 +9,13 @@
       class="button"
       type="button"
       (click)="data.refreshParking()"
-      [disabled]="data.parkingLoading()"
+      [disabled]="data.parkingLoading() || registros.registrandoEntrada()"
     >
       <app-icon name="refresh" />Atualizar
     </button>
   </div>
+
+  <app-entry-feedback />
 
   <div class="map-summary">
     <span
@@ -219,16 +221,22 @@
               </p>
             </div>
           }
+          @if (slot.disponibilidade === 'livre' && slot.vaga) {
+            <app-entry-form [vaga]="slot.vaga" />
+          }
           <div class="future-actions">
             <h3>Movimentação</h3>
+            @if (slot.disponibilidade !== 'livre') {
+              <button
+                class="button"
+                type="button"
+                disabled
+                title="Selecione uma vaga livre com status confirmado"
+              >
+                <app-icon name="car" />Registrar entrada
+              </button>
+            }
             <button
-              class="button"
-              type="button"
-              disabled
-              title="Registro de entrada ainda indisponível"
-            >
-              <app-icon name="car" />Registrar entrada</button
-            ><button
               class="button"
               type="button"
               disabled
@@ -236,7 +244,7 @@
             >
               <app-icon name="arrow" />Registrar saída
             </button>
-            <p>Registro de entradas e saídas ainda indisponível.</p>
+            <p>Registro de saída ainda indisponível.</p>
           </div>
         </div>
       } @else {

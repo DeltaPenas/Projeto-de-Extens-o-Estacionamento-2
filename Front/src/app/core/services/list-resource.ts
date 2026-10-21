@@ -22,6 +22,12 @@ export class ListResource<T> {
     if (this.status() === 'idle') this.load();
   }
 
+  reload() {
+    this.subscription?.unsubscribe();
+    this.statusState.set('idle');
+    this.load();
+  }
+
   load() {
     if (this.status() === 'loading') return;
     this.statusState.set('loading');

@@ -35,6 +35,8 @@ describe('Mapa do estacionamento', () => {
     const slot = element.querySelector<SVGGElement>('g[data-number="1"]')!;
     slot.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     fixture.detectChanges();
+    http.expectOne('/carros').flush([]);
+    fixture.detectChanges();
     expect(element.querySelector('#slot-details')?.textContent).toContain('101');
     expect(slot.getAttribute('aria-pressed')).toBe('true');
     expect(slot.classList.contains('parking-slot--livre')).toBe(true);
@@ -43,7 +45,8 @@ describe('Mapa do estacionamento', () => {
       element.querySelector('g[data-number="27"]')?.classList.contains('parking-slot--ocupada'),
     ).toBe(true);
     expect(element.querySelector('#slot-details .status-label')?.textContent).toContain('Livre');
-    expect(element.querySelectorAll('.future-actions button:disabled')).toHaveLength(2);
+    expect(element.querySelector('app-entry-form')).not.toBeNull();
+    expect(element.querySelectorAll('.future-actions button:disabled')).toHaveLength(1);
   });
 
   it('identifica cadastro ausente apenas após consulta bem-sucedida', () => {

@@ -19,6 +19,21 @@ export interface Carro {
   cor: string;
 }
 
+export interface RegistrarEntradaRequest {
+  carroid: number;
+  vagaid: number;
+}
+
+export interface RegistroEntrada {
+  id: number;
+  entrada: string;
+  saida: null;
+  carroId: number;
+  vagaId: number;
+  carro: Carro;
+  vaga: Vaga;
+}
+
 // Cadastro e ocupação são consultados separadamente.
 export type Disponibilidade = 'livre' | 'ocupada' | 'desconhecida' | 'nao-cadastrada';
 
