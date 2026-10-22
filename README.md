@@ -8,7 +8,7 @@ O frontend oferece Dashboard com indicadores de ocupação, consulta e busca loc
 
 A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre; `registroAtivo` identifica a movimentação aberta e o veículo, ou é `null` quando livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. Entradas e saídas apresentam confirmação e refazem as consultas do mapa e dos indicadores. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
 
-**Pendência de integração na revisão `e46451e` do backend:** `VagaController.listarStatus` ainda chama `vagaService.listarStatus()`, embora o método entregue seja `listarComStatus()`, fazendo a rota retornar `500`. O controller de saída também precisa importar `responderErro` para responder corretamente aos erros. Enquanto essas correções não forem entregues, o frontend não consegue consultar a ocupação pela API real. Os novos fluxos estão cobertos por testes com respostas controladas, sem alterar o backend.
+Os fluxos de ocupante, entrada e saída foram verificados no navegador com as rotas reais e PostgreSQL em banco temporário. A consulta de status utiliza `listarComStatus()` e os erros de negócio da saída são tratados em JSON, com validação estrita do ID recebido. Os cadastros locais de demonstração foram preservados.
 
 ## Tecnologias e pré-requisitos
 
@@ -160,7 +160,9 @@ npm test -- --watch=false
 
 Saída do build: `Front/dist/estacionamento/`. Os testes cobrem navegação, consulta compartilhada, busca de veículos, associação entre número e ID, cores do mapa, indicadores, entrada, detalhes do ocupante, confirmação e saída pelo registro ativo, filtro de veículos disponíveis, atualização e tratamento de falhas. Fixtures ficam restritas aos testes.
 
-Em `Back/`, **`npm test` é um placeholder e encerra com erro**; ainda não existe suíte de testes. Não há scripts de build ou start de produção no backend.
+Em `Back/`, execute `npm test` para rodar os 15 testes de regressão dos controllers de status e saída. Eles verificam o contrato, IDs inválidos e erros `400`, `404`, `409` e `500`, substituindo os services durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
+
+A verificação de tipos com `npx tsc --noEmit` ainda aponta uma dependência ausente (`@prisma/orm-postgres/runtime`) no artefato antigo `src/prisma/db.ts`. Esse arquivo de Prisma Next não é utilizado pelas rotas atuais, que usam Prisma Client 6; a pendência não impede a execução da API nem dos testes de controllers.
 
 ## Integração e principais rotas
 
@@ -169,12 +171,12 @@ O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativa
 | Rotas existentes                                        | Situação                                                              |
 | ------------------------------------------------------- | --------------------------------------------------------------------- |
 | `GET /vagas`, `GET /vagas/:id`                          | ID e número; sem ocupação                                             |
-| `GET /vagas/status`                                     | ID, número, status e registro ativo com veículo; requer correção do controller descrita acima |
+| `GET /vagas/status`                                     | ID, número, status e registro ativo com veículo; integrado ao mapa e aos indicadores |
 | `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código                |
 | `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                                  |
 | `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código                |
 | `POST /registros/entrada`                               | Integrado com `{ carroid, vagaid }`; concorrência pendente no backend |
-| `POST /registros/saida`                                 | Integrado com `{ registroId }`; requer correção do tratamento de erros |
+| `POST /registros/saida`                                 | Integrado com `{ registroId }` inteiro e positivo; erros de negócio em JSON |
 
 O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à API na mesma origem ou configure outra origem com CORS. Não há autenticação ou configuração de CORS na API atual.
 

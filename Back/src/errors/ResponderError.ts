@@ -1,5 +1,4 @@
-// src/errors/responderErro.ts
-import { Response } from "express";
+import type { Response } from "express";
 import { AppError } from "./AppError";
 
 export function responderErro(res: Response, error: unknown) {

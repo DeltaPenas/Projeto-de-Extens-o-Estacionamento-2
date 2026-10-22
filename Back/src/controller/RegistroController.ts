@@ -1,5 +1,6 @@
 import type {Request, Response} from 'express';
 import { RegistroService } from '../service/RegistroService';
+import { responderErro } from '../errors/ResponderError';
 
 const registroService = new RegistroService();
 
@@ -57,7 +58,7 @@ async ocupar(req: Request, res: Response) {
 
     async liberar(req: Request, res: Response) {
     try {
-        const registroId = Number(req.body.registroId);
+        const registroId = req.body?.registroId;
 
         if (!Number.isInteger(registroId) || registroId <= 0) {
             return res.status(400).json({

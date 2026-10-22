@@ -101,11 +101,11 @@ Falhas de conexão, timeout e `500` deixam a operação com confirmação incert
 provocam nova consulta, sem repetir o POST automaticamente. A última confirmação
 permanece se essa consulta falhar. Navegar durante o envio não cancela a operação.
 
-Na revisão `e46451e` do backend, a consulta real ainda retorna `500`: o controller
-chama `listarStatus()`, mas o service expõe `listarComStatus()`. O controller de saída
-também está sem o import de `responderErro`. A correção desses pontos pela equipe
-do backend é necessária para validar o fluxo completo pela API; os testes do
-frontend usam respostas controladas do contrato entregue.
+O controller de status utiliza `listarComStatus()` para consultar as ocupações.
+A saída exige `registroId` numérico, inteiro e positivo; corpo ausente e IDs em texto,
+booleanos ou listas retornam `400`. Erros de negócio passam pelo tratamento comum
+da API: registro inexistente retorna `404` e registro já encerrado retorna `409`,
+sempre em JSON.
 
 ## Registro de entrada
 
@@ -150,12 +150,13 @@ com as rotas reais e PostgreSQL em banco temporário. Foram validados gravação
 confirmação, mapa, indicadores, conflito e recuperação de falha na atualização.
 O banco temporário foi removido e os cadastros locais de demonstração preservados.
 
-Os novos fluxos de ocupante, saída e filtro de veículos foram conferidos no Edge
-em desktop (1440 px) e celular (390 px), com respostas controladas da API. Foram
-validados confirmação, cancelamento, conflito, reentrada, retorno do veículo à
-seleção, indicadores e recuperação após falha de consulta, sem rolagem horizontal
-da página. Essa verificação não substitui a integração real pendente das correções
-do controller descritas acima.
+Os fluxos de ocupante, saída e filtro de veículos também foram conferidos no Edge
+em desktop (1440 px) e celular (390 px), com as rotas reais da API e PostgreSQL em
+banco temporário. Foram validados confirmação, cancelamento, saída persistida,
+reentrada, retorno do veículo à seleção, exclusão de veículos em vagas fora do
+mapa e indicadores, sem rolagem horizontal da página. O banco temporário foi
+removido e os cadastros locais de demonstração preservados. Os testes com respostas
+controladas cobrem conflitos e recuperação após falha de consulta.
 
 Os testes cobrem navegação e reaproveitamento de consultas, falhas independentes,
 recuperação, busca, distinção entre número e ID, interpretação de `true`/`false`,

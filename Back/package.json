@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     
-  "test": "echo \"Error: no test specified\" && exit 1",
+  "test": "tsx --test tests/parking-controllers.test.ts",
   "dev": "tsx watch src/server.ts"
   },
   "keywords": [],

@@ -9,14 +9,6 @@ import { AppError } from "../errors/AppError";
 const carroRepository = new CarroRepository();
 const vagaRepository = new VagaRepository();
 const registroRepository = new RegistroRepository();
-function responderErro(res: Response, error: unknown) {
-    if (error instanceof AppError) {
-        return res.status(error.status).json({ erro: error.message });
-    }
-    console.error(error);
-    return res.status(500).json({ erro: "Erro interno" });
-}
-
 export class RegistroService{
     
     async ocuparVaga(carroId: number, vagaId: number) {
