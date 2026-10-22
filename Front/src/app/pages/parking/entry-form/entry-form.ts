@@ -26,13 +26,21 @@ export class EntryForm {
       this.vaga();
       this.carroId.reset('');
     });
+    effect(() => {
+      const disponiveis = this.data.carrosDisponiveis();
+      if (!disponiveis.some((carro) => carro.id === Number(this.carroId.value))) {
+        this.carroId.reset('');
+      }
+    });
   }
 
   protected submit(event: Event) {
     event.preventDefault();
-    if (this.registros.registrandoEntrada()) return;
+    if (this.registros.registrando()) return;
     this.carroId.markAsTouched();
-    const carro = this.data.carros.items().find((item) => item.id === Number(this.carroId.value));
+    const carro = this.data
+      .carrosDisponiveis()
+      .find((item) => item.id === Number(this.carroId.value));
     if (this.carroId.invalid || !carro) return;
     this.registros.registrarEntrada(carro, this.vaga());
   }

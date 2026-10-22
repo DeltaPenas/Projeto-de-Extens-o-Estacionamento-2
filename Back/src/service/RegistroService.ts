@@ -1,12 +1,19 @@
 import {CarroRepository} from "../repository/CarroRepository";
 import {RegistroRepository} from "../repository/RegistroRepository";
 import {VagaRepository} from "../repository/VagaRepository";
+import { AppError } from "../errors/AppError";
+import { consultarHistorico } from "./consulta-historico";
+
+
+
 
 const carroRepository = new CarroRepository();
 const vagaRepository = new VagaRepository();
 const registroRepository = new RegistroRepository();
-
 export class RegistroService{
+    listarHistorico(query: Record<string, unknown>) {
+        return registroRepository.listarHistorico(consultarHistorico(query));
+    }
     
     async ocuparVaga(carroId: number, vagaId: number) {
         const carro = await carroRepository.listarPorId(carroId);
@@ -44,15 +51,17 @@ export class RegistroService{
     }
 
 
-   async liberarVaga(placa: string) {
-        const registroAtivo = await registroRepository.buscarAtivoPorPlaca(placa);
-        if (!registroAtivo) {
-            throw new Error("Veículo não encontrado ou já liberado.");
-        }
-
-
-        const registroAtualizado = await registroRepository.registrarSaida(registroAtivo.id);
-
-        return registroAtualizado;
+  async liberarVaga(registroId: number) {
+    const registro = await registroRepository.buscarPorId(registroId);
+    if (!registro) {
+        throw new AppError("Registro não encontrado", 404);
     }
+
+    const encerrados = await registroRepository.encerrarSeAtivo(registroId);
+    if (encerrados === 0) {
+        throw new AppError("Este registro já foi encerrado", 409);
+    }
+
+    return registroRepository.buscarPorId(registroId);
+}
 }

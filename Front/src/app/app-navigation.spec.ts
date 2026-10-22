@@ -4,8 +4,34 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
+import { flushEmptyHistory } from './testing/history';
 
 describe('Navegação entre as duas páginas', () => {
+  it('abre a vaga física indicada pelo Dashboard, inclusive após acesso direto à URL', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/estacionamento?vaga=4');
+    const vaga = { id: 205, numero: 4 };
+    http.expectOne('/vagas').flush([vaga]);
+    http.expectOne('/vagas/status').flush([{ ...vaga, status: true }]);
+    flushEmptyHistory(http);
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('#slot-details h3')?.textContent).toContain(
+      '04',
+    );
+    expect(
+      harness.routeNativeElement?.querySelector('g[data-number="4"]')?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    await harness.navigateByUrl('/estacionamento?vaga=200');
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Selecione uma vaga');
+    http.expectNone('/vagas');
+    flushEmptyHistory(http);
+    http.verify();
+  });
   it('compartilha cadastro e ocupação e reflete no Dashboard a atualização feita no mapa', async () => {
     TestBed.configureTestingModule({
       providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
@@ -46,6 +72,7 @@ describe('Navegação entre as duas páginas', () => {
     http.expectNone('/carros');
     http.expectNone('/registros/entrada');
     http.expectNone('/registros/saida');
+    flushEmptyHistory(http);
     http.verify();
   });
 
@@ -59,7 +86,7 @@ describe('Navegação entre as duas páginas', () => {
     const carro = { id: 81, placa: 'ABC1D23', modelo: 'Onix', cor: 'Branco' };
     await harness.navigateByUrl('/');
     http.expectOne('/vagas').flush([vaga]);
-    http.expectOne('/vagas/status').flush([{ ...vaga, status: false }]);
+    http.expectOne('/vagas/status').flush([{ ...vaga, status: false, registroAtivo: null }]);
     http.expectOne('/carros').flush([carro]);
     await harness.navigateByUrl('/estacionamento');
     harness
@@ -108,6 +135,65 @@ describe('Navegação entre as duas páginas', () => {
       'Entrada registrada com sucesso',
     );
     http.expectNone('/registros/entrada');
+    flushEmptyHistory(http);
+    http.verify();
+  });
+  it('conclui a saída ao navegar e substitui consultas anteriores para atualizar o Dashboard', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create();
+    const vaga = { id: 101, numero: 1 };
+    const carro = { id: 81, placa: 'ABC1D23', modelo: 'Onix', cor: 'Branco' };
+    const ativo = {
+      id: 56,
+      carroId: 81,
+      vagaId: 101,
+      entrada: '2026-10-21T12:00:00.000Z',
+      saida: null,
+      carro,
+    };
+    await harness.navigateByUrl('/estacionamento');
+    http.expectOne('/vagas').flush([vaga]);
+    http.expectOne('/vagas/status').flush([{ ...vaga, status: true, registroAtivo: ativo }]);
+    harness.detectChanges();
+    harness
+      .routeNativeElement!.querySelector('g[data-number="1"]')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    harness.detectChanges();
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('app-exit-action button')!.click();
+    harness.detectChanges();
+    harness
+      .routeNativeElement!.querySelector<HTMLButtonElement>('.exit-confirmation .button-primary')!
+      .click();
+    const request = http.expectOne('/registros/saida');
+    await harness.navigateByUrl('/');
+    expect(request.cancelled).toBe(false);
+    http.expectOne('/carros').flush([carro]);
+    harness.detectChanges();
+    harness.routeNativeElement!.querySelector<HTMLButtonElement>('.page-heading button')!.click();
+    const previousVagas = http.expectOne('/vagas');
+    const previousStatus = http.expectOne('/vagas/status');
+    http.expectOne('/carros').flush([carro]);
+    request.flush({ ...ativo, vaga, saida: '2026-10-21T14:00:00.000Z' });
+    expect(previousVagas.cancelled).toBe(true);
+    expect(previousStatus.cancelled).toBe(true);
+    http.expectOne('/vagas').flush([vaga]);
+    http.expectOne('/vagas/status').flush([{ ...vaga, status: false, registroAtivo: null }]);
+    harness.detectChanges();
+    expect(
+      Array.from(harness.routeNativeElement!.querySelectorAll('.metric-value'), (node) =>
+        node.textContent?.trim(),
+      ),
+    ).toEqual(['27vagas', '1', '0', '0%']);
+    await harness.navigateByUrl('/estacionamento');
+    harness.detectChanges();
+    expect(harness.routeNativeElement!.querySelector('.exit-feedback')?.textContent).toContain(
+      'Saída registrada com sucesso',
+    );
+    http.expectNone('/registros/saida');
+    flushEmptyHistory(http);
     http.verify();
   });
 });

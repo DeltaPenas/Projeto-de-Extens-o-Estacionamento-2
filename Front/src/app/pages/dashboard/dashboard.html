@@ -111,6 +111,15 @@
                   [value]="search()"
                   (input)="search.set($any($event.target).value)"
               /></label>
+              <label class="status-filter"
+                >Situação
+                <select [value]="situacao()" (change)="situacao.set($any($event.target).value)">
+                  <option value="">Todas</option>
+                  <option value="estacionado">Estacionados</option>
+                  <option value="disponivel">Disponíveis</option>
+                  <option value="nao-verificada">Não verificada</option>
+                </select>
+              </label>
             </div>
             @if (filteredCars().length) {
               <div
@@ -121,13 +130,15 @@
               >
                 <table>
                   <caption class="visually-hidden">
-                    Placa, modelo e cor dos veículos cadastrados
+                    Veículos cadastrados, situação e ocupação atual
                   </caption>
                   <thead>
                     <tr>
-                      <th scope="col">PLACA</th>
-                      <th scope="col">MODELO</th>
-                      <th scope="col">COR</th>
+                      <th scope="col">VEÍCULO</th>
+                      <th scope="col">SITUAÇÃO</th>
+                      <th scope="col">VAGA</th>
+                      <th scope="col">ENTRADA</th>
+                      <th scope="col"><span class="visually-hidden">Ações</span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -135,9 +146,55 @@
                       <tr>
                         <td>
                           <span class="plate">{{ carro.placa }}</span>
+                          <small class="vehicle-description"
+                            >{{ carro.modelo }} · {{ carro.cor }}</small
+                          >
                         </td>
-                        <td>{{ carro.modelo }}</td>
-                        <td>{{ carro.cor }}</td>
+                        <td>
+                          <span
+                            class="badge"
+                            [class.car-parked]="carro.situacao === 'estacionado'"
+                            [class.car-available]="carro.situacao === 'disponivel'"
+                            >{{
+                              carro.situacao === 'estacionado'
+                                ? 'Estacionado'
+                                : carro.situacao === 'disponivel'
+                                  ? 'Disponível'
+                                  : 'Não verificada'
+                            }}</span
+                          >
+                        </td>
+                        <td>
+                          {{
+                            carro.ocupacao
+                              ? carro.ocupacao.vaga.numero.toString().padStart(2, '0')
+                              : '—'
+                          }}
+                        </td>
+                        <td class="entry-time">
+                          {{
+                            carro.ocupacao
+                              ? (carro.ocupacao.entrada | date: 'dd/MM/yyyy HH:mm')
+                              : '—'
+                          }}
+                        </td>
+                        <td>
+                          @if (carro.ocupacao; as ocupacao) {
+                            @if (physicalNumbers.has(ocupacao.vaga.numero)) {
+                              <a
+                                class="button"
+                                routerLink="/estacionamento"
+                                [queryParams]="{ vaga: ocupacao.vaga.numero }"
+                                [attr.aria-label]="
+                                  'Ver ' + carro.placa + ' no mapa, vaga ' + ocupacao.vaga.numero
+                                "
+                                >Ver no mapa</a
+                              >
+                            } @else {
+                              <span class="outside-map">Fora do mapa</span>
+                            }
+                          }
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -147,8 +204,10 @@
               <div class="empty-state" role="status">
                 <app-icon name="search" />
                 <h3>Nenhum resultado encontrado</h3>
-                <p>Tente outra placa, modelo ou cor.</p>
-                <button class="button" type="button" (click)="search.set('')">Limpar busca</button>
+                <p>Tente outra placa, modelo, cor ou situação.</p>
+                <button class="button" type="button" (click)="search.set(''); situacao.set('')">
+                  Limpar filtros
+                </button>
               </div>
             }
             <div class="table-footer" role="status">

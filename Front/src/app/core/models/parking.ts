@@ -6,10 +6,13 @@ export interface Vaga {
 export interface VagaStatus extends Vaga {
   // Contrato de GET /vagas/status: true significa ocupada.
   status: boolean;
+  // Ausência do campo é tolerada para exibir o status antigo, sem habilitar movimentações.
+  registroAtivo?: RegistroAtivo | null;
 }
 
 export interface VagaComDisponibilidade extends Vaga {
   disponibilidade: Exclude<Disponibilidade, 'nao-cadastrada'>;
+  ocupacao?: DetalhesOcupacao;
 }
 
 export interface Carro {
@@ -19,9 +22,48 @@ export interface Carro {
   cor: string;
 }
 
+export interface CarroComSituacao extends Carro {
+  situacao: 'estacionado' | 'disponivel' | 'nao-verificada';
+  ocupacao?: { vaga: Vaga; entrada: string; registroId: number };
+}
+
+export interface RegistroHistorico extends Omit<RegistroEntrada, 'saida'> {
+  saida: string | null;
+}
+
+export interface ConsultaHistorico {
+  page: number;
+  limit: number;
+  placa?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  situacao?: 'abertos' | 'encerrados';
+}
+
+export interface PaginaHistorico {
+  items: RegistroHistorico[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface RegistrarEntradaRequest {
   carroid: number;
   vagaid: number;
+}
+
+export interface RegistrarSaidaRequest {
+  registroId: number;
+}
+
+export interface RegistroAtivo {
+  id: number;
+  entrada: string;
+  saida: null;
+  carroId: number;
+  vagaId: number;
+  carro: Carro;
 }
 
 export interface RegistroEntrada {
@@ -34,10 +76,15 @@ export interface RegistroEntrada {
   vaga: Vaga;
 }
 
+export interface RegistroSaida extends Omit<RegistroEntrada, 'saida'> {
+  saida: string;
+}
+
 // Cadastro e ocupação são consultados separadamente.
 export type Disponibilidade = 'livre' | 'ocupada' | 'desconhecida' | 'nao-cadastrada';
 
 export interface DetalhesOcupacao {
+  registroId: number;
   veiculo: Carro;
   entrada: string;
 }

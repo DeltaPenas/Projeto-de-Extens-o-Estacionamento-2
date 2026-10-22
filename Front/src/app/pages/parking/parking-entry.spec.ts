@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Parking } from './parking';
+import { flushEmptyHistory } from '../../testing/history';
 
 describe('Entrada de veículo pelo painel da vaga', () => {
   let fixture: ComponentFixture<Parking>;
@@ -33,11 +34,20 @@ describe('Entrada de veículo pelo painel da vaga', () => {
     element = fixture.nativeElement;
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    flushEmptyHistory(http);
+    http.verify();
+  });
 
   function loadParking(occupied = false) {
     http.expectOne('/vagas').flush(vagas);
-    http.expectOne('/vagas/status').flush(vagas.map((vaga) => ({ ...vaga, status: occupied })));
+    http.expectOne('/vagas/status').flush(
+      vagas.map((vaga) => ({
+        ...vaga,
+        status: occupied,
+        registroAtivo: occupied ? { ...registro, vagaId: vaga.id } : null,
+      })),
+    );
     fixture.detectChanges();
   }
 
@@ -71,9 +81,13 @@ describe('Entrada de veículo pelo painel da vaga', () => {
 
   function refresh(occupied = true) {
     http.expectOne('/vagas').flush(vagas);
-    http
-      .expectOne('/vagas/status')
-      .flush(vagas.map((vaga) => ({ ...vaga, status: occupied && vaga.id === 101 })));
+    http.expectOne('/vagas/status').flush(
+      vagas.map((vaga) => ({
+        ...vaga,
+        status: occupied && vaga.id === 101,
+        registroAtivo: occupied && vaga.id === 101 ? registro : null,
+      })),
+    );
     fixture.detectChanges();
   }
 
@@ -108,7 +122,7 @@ describe('Entrada de veículo pelo painel da vaga', () => {
       element.querySelector('g[data-number="1"]')?.classList.contains('parking-slot--ocupada'),
     ).toBe(true);
     expect(element.querySelector('#slot-details .status-label')?.textContent).toContain('Ocupada');
-    expect(element.querySelector('form')).toBeNull();
+    expect(element.querySelector('app-entry-form form')).toBeNull();
     http.expectNone('/carros');
     http.expectNone('/registros/saida');
   });
@@ -125,7 +139,7 @@ describe('Entrada de veículo pelo painel da vaga', () => {
       'Entrada registrada com sucesso',
     );
     expect(element.textContent).toContain('Não foi possível consultar a ocupação');
-    expect(element.querySelector('form')).toBeNull();
+    expect(element.querySelector('app-entry-form form')).toBeNull();
     http.expectNone('/registros/entrada');
   });
 
@@ -157,7 +171,7 @@ describe('Entrada de veículo pelo painel da vaga', () => {
       'Não foi possível confirmar a entrada',
     );
     expect(element.querySelector('.entry-success')).toBeNull();
-    expect(element.querySelector('form')).toBeNull();
+    expect(element.querySelector('app-entry-form form')).toBeNull();
     http.expectNone('/registros/entrada');
   });
 
@@ -218,7 +232,7 @@ describe('Entrada de veículo pelo painel da vaga', () => {
     http.expectOne('/carros').flush([]);
     fixture.detectChanges();
     expect(element.textContent).toContain('Nenhum veículo cadastrado');
-    expect(element.querySelector('form')).toBeNull();
+    expect(element.querySelector('app-entry-form form')).toBeNull();
     http.expectNone('/registros/entrada');
   });
 

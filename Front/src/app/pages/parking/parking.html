@@ -8,14 +8,14 @@
     <button
       class="button"
       type="button"
-      (click)="data.refreshParking()"
-      [disabled]="data.parkingLoading() || registros.registrandoEntrada()"
+      (click)="refresh()"
+      [disabled]="data.parkingLoading() || registros.registrando()"
     >
       <app-icon name="refresh" />Atualizar
     </button>
   </div>
 
-  <app-entry-feedback />
+  <app-movement-feedback />
 
   <div class="map-summary">
     <span
@@ -130,7 +130,7 @@
 
     <aside id="slot-details" class="panel detail-panel" aria-labelledby="details-title">
       <header class="panel-heading detail-heading">
-        <h2 id="details-title">Detalhes da vaga</h2>
+        <h2 id="details-title" tabindex="-1">Detalhes da vaga</h2>
         @if (selected()) {
           <button
             class="icon-button"
@@ -203,6 +203,14 @@
                   <dt>Cor</dt>
                   <dd>{{ ocupacao.veiculo.cor }}</dd>
                 </div>
+                <div>
+                  <dt>Entrada</dt>
+                  <dd>{{ ocupacao.entrada | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+                </div>
+                <div>
+                  <dt>Registro ativo</dt>
+                  <dd>{{ ocupacao.registroId }}</dd>
+                </div>
               </dl>
             </div>
           } @else {
@@ -224,28 +232,38 @@
           @if (slot.disponibilidade === 'livre' && slot.vaga) {
             <app-entry-form [vaga]="slot.vaga" />
           }
-          <div class="future-actions">
-            <h3>Movimentação</h3>
-            @if (slot.disponibilidade !== 'livre') {
+          @if (slot.disponibilidade === 'ocupada' && slot.vaga && slot.ocupacao) {
+            <app-exit-action [vaga]="slot.vaga" [ocupacao]="slot.ocupacao" />
+          } @else {
+            <div class="future-actions">
+              <h3>Movimentação</h3>
+              @if (slot.disponibilidade !== 'livre') {
+                <button
+                  class="button"
+                  type="button"
+                  disabled
+                  title="Selecione uma vaga livre com status confirmado"
+                >
+                  <app-icon name="car" />Registrar entrada
+                </button>
+              }
               <button
                 class="button"
                 type="button"
                 disabled
-                title="Selecione uma vaga livre com status confirmado"
+                title="Selecione uma vaga ocupada com registro ativo identificado"
               >
-                <app-icon name="car" />Registrar entrada
+                <app-icon name="arrow" />Registrar saída
               </button>
-            }
-            <button
-              class="button"
-              type="button"
-              disabled
-              title="Registro de saída ainda indisponível"
-            >
-              <app-icon name="arrow" />Registrar saída
-            </button>
-            <p>Registro de saída ainda indisponível.</p>
-          </div>
+              <p>
+                {{
+                  slot.disponibilidade === 'ocupada'
+                    ? 'Atualize a ocupação para identificar o registro ativo antes da saída.'
+                    : 'Selecione uma vaga ocupada para registrar a saída.'
+                }}
+              </p>
+            </div>
+          }
         </div>
       } @else {
         <div class="detail-placeholder">
@@ -258,4 +276,5 @@
       }
     </aside>
   </div>
+  <app-parking-history />
 </div>

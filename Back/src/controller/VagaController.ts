@@ -63,7 +63,7 @@ export class VagaController {
 
     async listarStatus(req: Request, res: Response) {
         try{
-            const vagas = await vagaService.listarStatus();
+            const vagas = await vagaService.listarComStatus();
             return res.status(200).json(vagas);
         }catch (error){
             console.error(error);

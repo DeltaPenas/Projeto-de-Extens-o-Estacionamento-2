@@ -42,18 +42,18 @@ export class VagaService {
         return vagaRepository.deletar(id);
     }
 
-    async listarStatus() {
-        const vagas = await vagaRepository.listarTodas();
-        const resultado : { id: number; numero: number; status: boolean }[] = [];
-        for (const vaga of vagas){
-            const registroAtivo = await vagaRepository.buscarRegistroAtivo(vaga.id);
-            resultado.push({
-                id: vaga.id,
-                numero:vaga.numero,
-                status:registroAtivo ? true : false
-            });
+ async listarComStatus() {
+    const vagas = await vagaRepository.listarComRegistroAtivo();
 
-        }
-        return resultado;
-    }
+    return vagas.map(vaga => {
+        const registroAtivo = vaga.registros[0] ?? null;
+
+        return {
+            id: vaga.id,
+            numero: vaga.numero,
+            status: registroAtivo !== null,
+            registroAtivo
+        };
+    });
+}
 }
