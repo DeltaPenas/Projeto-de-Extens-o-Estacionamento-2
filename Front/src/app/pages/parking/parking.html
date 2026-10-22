@@ -111,7 +111,10 @@
       <header class="panel-heading map-heading">
         <div>
           <h2 id="map-title">Mapa do estacionamento</h2>
-          <p>Vista superior · selecione uma posição</p>
+          <p>
+            <span class="mobile-hidden">Vista superior · selecione uma posição</span
+            ><span class="mobile-only">Selecione uma vaga por setor</span>
+          </p>
         </div>
         <span class="badge">27 POSIÇÕES</span>
       </header>
@@ -128,7 +131,12 @@
       </div>
     </section>
 
-    <aside id="slot-details" class="panel detail-panel" aria-labelledby="details-title">
+    <aside
+      id="slot-details"
+      class="panel detail-panel"
+      [class.mobile-hidden]="selected() === null"
+      aria-labelledby="details-title"
+    >
       <header class="panel-heading detail-heading">
         <h2 id="details-title" tabindex="-1">Detalhes da vaga</h2>
         @if (selected()) {

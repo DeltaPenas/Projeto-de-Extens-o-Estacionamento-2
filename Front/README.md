@@ -19,7 +19,7 @@ src/app/
   shared/
     icon/                          # Ícones SVG sem dependência externa
     metric-card/                   # Cards reutilizáveis
-    parking-map/                   # Planta SVG e interação por mouse/teclado
+    parking-map/                   # Planta SVG e grade por setor para telas menores
   app.*                            # Layout administrativo e navegação
 ```
 
@@ -115,12 +115,33 @@ sem F5; detalhes do ocupante e histórico também recebem os novos atributos do 
 O histórico mantém os vínculos e apresenta os dados atuais do veículo, sem cópia dos
 atributos anteriores à edição. Os filtros aplicados são preservados na atualização.
 
+## Layout para celular
+
+Até 900 px, a marca ocupa um cabeçalho compacto e a navegação principal fica fixa
+na parte inferior, com espaço reservado no conteúdo e respeito à área segura do
+aparelho. Os três destinos mantêm a mesma rota e o indicador da página ativa.
+As telas maiores preservam o menu lateral e a apresentação anterior.
+
+O estacionamento usa uma grade de botões separada em Parte superior (01–18) e
+Parte inferior (19–27), sem rolagem horizontal. As cores, os estados e a seleção
+usam os mesmos dados da planta SVG. A grade agrupa as vagas por setor e não
+representa distâncias ou escala física. Tocar em uma vaga leva o foco aos detalhes;
+fechar devolve o foco ao botão correspondente. O painel sem seleção fica oculto
+nessas larguras, e os mesmos formulários continuam registrando entradas e saídas.
+
+Dashboard, histórico e Veículos compartilham `mobile-cards`: as tabelas viram
+cartões com rótulos dos campos e ações acessíveis sem rolagem lateral. As listas
+acompanham a rolagem da página, mantendo busca, filtros e paginação. Inputs e
+seletores usam fonte de 16 px, e as ações e os botões de vaga têm pelo menos 44 px
+de altura. Indicadores, formulários e botões recebem espaçamento para toque.
+
 ## Convenção física e disponibilidade
 
 As 27 posições são 1–18 na parte superior e 19–27 na inferior, inicialmente
 centralizada. Ajuste `numeros` e `startColumn` em `core/parking-layout.ts` para
 alinhar outra correspondência física. Todas têm a mesma largura e altura. Em
-resoluções pequenas, a planta permite rolagem horizontal.
+larguras acima de 900 px, a planta mantém sua disposição e pode ser rolada dentro
+do painel se necessário. Até 900 px, a grade por setor mantém a mesma numeração.
 
 A associação usa `vaga.numero`. O ID do banco fica separado, é mostrado nos
 detalhes e é o parâmetro de `buscarPorId()`, nunca o número físico.
@@ -235,6 +256,15 @@ incoerentes mostram erro com opção de repetir a consulta e preservam a confirm
 da movimentação. O contrato completo está no [README principal](../README.md#consulta-de-histórico).
 
 ## Verificação
+
+O layout responsivo foi conferido no Edge em 320, 390, 760, 768 e 844 px, sem
+rolagem horizontal da página, da grade ou dos cartões. Respostas controladas
+permitiram comparar o desktop de 1440 px com a apresentação anterior. Foram
+verificados os tamanhos dos botões, seleção das vagas 04 e 27, foco nos detalhes,
+retorno à vaga e campos de entrada legíveis. Com as rotas reais e PostgreSQL em
+banco temporário, também foram validados entrada, saída, edição, exclusão e seus
+bloqueios em 320, 390 e 1440 px. O banco temporário foi removido e os dados locais
+de demonstração foram preservados.
 
 Edição e exclusão foram verificadas no Edge em desktop (1440 px) e celular (390 px),
 com as rotas reais e PostgreSQL em banco temporário. Foram conferidos `200`, `204`,

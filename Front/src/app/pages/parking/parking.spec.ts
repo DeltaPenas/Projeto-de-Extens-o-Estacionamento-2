@@ -162,4 +162,46 @@ describe('Mapa do estacionamento', () => {
       0,
     );
   });
+
+  it('abre o ocupante pelo botão do celular e devolve o foco à mesma vaga ao fechar', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: true })),
+    );
+    try {
+      const vaga = { id: 902, numero: 27 };
+      const carro = { id: 81, placa: 'ABC1D23', modelo: 'Onix', cor: 'Branco' };
+      http.expectOne('/vagas').flush([vaga]);
+      http.expectOne('/vagas/status').flush([
+        {
+          ...vaga,
+          status: true,
+          registroAtivo: {
+            id: 56,
+            carroId: 81,
+            vagaId: 902,
+            entrada: '2026-10-22T12:00:00.000Z',
+            saida: null,
+            carro,
+          },
+        },
+      ]);
+      flushEmptyHistory(http);
+      fixture.detectChanges();
+      const botao = element.querySelector<HTMLButtonElement>('[data-mobile-number="27"]')!;
+      botao.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(element.querySelector('.vehicle-details')?.textContent).toContain('ABC1D23');
+      expect(botao.getAttribute('aria-pressed')).toBe('true');
+      expect(document.activeElement?.id).toBe('details-title');
+      element.querySelector<HTMLButtonElement>('[aria-label="Fechar detalhes da vaga"]')!.click();
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(botao);
+      expect(botao.getAttribute('aria-pressed')).toBe('false');
+      http.expectNone((request) => request.method !== 'GET');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

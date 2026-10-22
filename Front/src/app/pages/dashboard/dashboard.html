@@ -128,7 +128,7 @@
                 role="region"
                 aria-label="Lista de veículos cadastrados"
               >
-                <table>
+                <table class="mobile-cards">
                   <caption class="visually-hidden">
                     Veículos cadastrados, situação e ocupação atual
                   </caption>
@@ -150,7 +150,7 @@
                             >{{ carro.modelo }} · {{ carro.cor }}</small
                           >
                         </td>
-                        <td>
+                        <td data-label="Situação">
                           <span
                             class="badge"
                             [class.car-parked]="carro.situacao === 'estacionado'"
@@ -164,21 +164,21 @@
                             }}</span
                           >
                         </td>
-                        <td>
+                        <td data-label="Vaga">
                           {{
                             carro.ocupacao
                               ? carro.ocupacao.vaga.numero.toString().padStart(2, '0')
                               : '—'
                           }}
                         </td>
-                        <td class="entry-time">
+                        <td class="entry-time" data-label="Entrada">
                           {{
                             carro.ocupacao
                               ? (carro.ocupacao.entrada | date: 'dd/MM/yyyy HH:mm')
                               : '—'
                           }}
                         </td>
-                        <td>
+                        <td class="mobile-card-wide" [class.mobile-empty]="!carro.ocupacao">
                           @if (carro.ocupacao; as ocupacao) {
                             @if (physicalNumbers.has(ocupacao.vaga.numero)) {
                               <a

@@ -73,6 +73,11 @@ export class Parking {
 
   protected selectSlot(numero: number) {
     this.selectedNumber.set(numero);
+    if (this.document.defaultView?.matchMedia?.('(max-width: 900px)')?.matches) {
+      // Esperar o painel renderizar antes de mover o foco e rolar até os detalhes.
+      this.routeSelectionPending.set(true);
+      return;
+    }
     if (this.document.defaultView?.matchMedia?.('(max-width: 1320px)')?.matches) {
       this.document.getElementById('slot-details')?.scrollIntoView?.({ block: 'nearest' });
     }
@@ -81,6 +86,12 @@ export class Parking {
   protected closeDetails() {
     const numero = this.selectedNumber();
     this.selectedNumber.set(null);
-    this.document.querySelector<SVGElement>(`g[data-number="${numero}"]`)?.focus();
+    this.routeSelectionPending.set(false);
+    const mobile = this.document.defaultView?.matchMedia?.('(max-width: 900px)')?.matches;
+    this.document
+      .querySelector<HTMLElement | SVGElement>(
+        mobile ? `[data-mobile-number="${numero}"]` : `g[data-number="${numero}"]`,
+      )
+      ?.focus();
   }
 }

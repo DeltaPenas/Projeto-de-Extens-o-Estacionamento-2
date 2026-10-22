@@ -67,6 +67,19 @@ export class ParkingMap {
   protected readonly width = SLOT_WIDTH;
   protected readonly height = SLOT_HEIGHT;
   protected readonly labels = SLOT_LABELS;
+  protected readonly mobileLabels: Record<Disponibilidade, string> = {
+    livre: 'Livre',
+    ocupada: 'Ocupada',
+    desconhecida: 'A conferir',
+    'nao-cadastrada': 'Sem cadastro',
+  };
+  protected readonly sectors = computed(() =>
+    PARKING_ROWS.map((row) => ({
+      title: row.superior ? 'Parte superior' : 'Parte inferior',
+      range: row.superior ? '01–18' : '19–27',
+      slots: this.slots().filter((slot) => slot.superior === row.superior),
+    })),
+  );
   protected readonly hasUnregistered = computed(() =>
     this.slots().some((slot) => slot.disponibilidade === 'nao-cadastrada'),
   );

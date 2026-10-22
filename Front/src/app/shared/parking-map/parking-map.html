@@ -1,9 +1,4 @@
-<div
-  class="map-scroll"
-  tabindex="0"
-  role="region"
-  aria-label="Mapa com rolagem horizontal em telas pequenas"
->
+<div class="map-scroll" tabindex="0" role="region" aria-label="Planta do estacionamento">
   <svg
     class="parking-drawing"
     viewBox="0 0 960 444"
@@ -85,6 +80,36 @@
       </g>
     }
   </svg>
+</div>
+<div class="mobile-map" aria-label="Vagas organizadas por setor">
+  <p class="mobile-map-help">Toque em uma vaga para consultar ou registrar uma movimentação.</p>
+  @for (sector of sectors(); track sector.title) {
+    <section class="mobile-sector" [attr.aria-label]="sector.title">
+      <header>
+        <h3>{{ sector.title }}</h3>
+        <span>Vagas {{ sector.range }}</span>
+      </header>
+      <div class="mobile-slot-grid">
+        @for (slot of sector.slots; track slot.numero) {
+          <button
+            type="button"
+            [attr.class]="'mobile-slot mobile-slot--' + slot.disponibilidade"
+            [class.selected]="selectedNumber() === slot.numero"
+            [attr.data-mobile-number]="slot.numero"
+            [attr.aria-label]="accessibleLabel(slot)"
+            [attr.aria-pressed]="selectedNumber() === slot.numero"
+            aria-controls="slot-details"
+            (click)="selectSlot.emit(slot.numero)"
+          >
+            <strong>{{ slot.numero.toString().padStart(2, '0') }}</strong>
+            <span>{{
+              slot.cadastroVerificado ? mobileLabels[slot.disponibilidade] : 'A conferir'
+            }}</span>
+          </button>
+        }
+      </div>
+    </section>
+  }
 </div>
 <div class="map-legend" aria-label="Legenda do mapa">
   <span><i class="legend-dot free"></i>Livre</span>

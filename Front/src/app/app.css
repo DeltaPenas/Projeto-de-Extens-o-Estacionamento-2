@@ -192,14 +192,14 @@ main {
     padding-inline: 24px;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .app-shell {
     display: block;
   }
   .sidebar {
     position: static;
     width: auto;
-    padding: 16px 18px 12px;
+    padding: max(14px, env(safe-area-inset-top)) 18px 14px;
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }
@@ -220,31 +220,43 @@ main {
     display: none;
   }
   nav {
-    display: flex;
-    margin-top: 18px;
-    gap: 8px;
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: white;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px #172b4d08;
+    gap: 6px;
   }
   nav a {
-    flex: 1;
+    flex-direction: column;
     justify-content: center;
-    padding: 11px 8px;
-    font-size: 12px;
+    gap: 5px;
+    min-height: 52px;
+    padding: 6px 2px;
+    font-size: 11px;
+  }
+  nav app-icon {
+    width: 20px;
+    height: 20px;
+  }
+  nav a:focus-visible {
+    outline-offset: 0;
   }
   .workspace {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
     margin-left: 0;
   }
   .topbar {
-    min-height: 55px;
-    padding: 12px 20px;
-  }
-  .topbar-subtitle,
-  .environment-label {
     display: none;
   }
   main {
-    padding: 24px 18px;
+    padding: 24px 16px;
   }
   .app-footer {
-    padding: 16px 18px;
+    padding: 16px;
   }
 }

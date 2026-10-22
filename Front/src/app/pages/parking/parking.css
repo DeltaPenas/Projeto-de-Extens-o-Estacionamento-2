@@ -35,7 +35,6 @@
   height: 7px;
   border-radius: 50%;
   background: #8b99ac;
-  display: inline-block;
   flex: 0 0 auto;
 }
 .parking-grid {
@@ -274,14 +273,14 @@
     grid-column: 1 / -1;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
+  .status-label,
+  .detail-note p {
+    font-size: 12px;
+  }
   .map-summary-status {
     margin-left: 0;
     width: 100%;
-  }
-  .map-summary {
-    gap: 10px;
-    font-size: 11px;
   }
   .detail-content {
     display: block;
