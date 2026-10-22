@@ -35,5 +35,16 @@ async buscarRegistroAtivo(vagaId: number) {
         where: { vagaId, saida: null }
     });
 }
-
+async listarComRegistroAtivo() {
+    return prisma.vaga.findMany({
+        include: {
+            registros: {
+                where: { saida: null },
+                include: { carro: true },
+                take: 1
+            }
+        },
+        orderBy: { numero: "asc" }
+    });
+}
  }
