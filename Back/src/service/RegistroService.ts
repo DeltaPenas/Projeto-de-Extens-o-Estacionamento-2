@@ -1,10 +1,21 @@
 import {CarroRepository} from "../repository/CarroRepository";
 import {RegistroRepository} from "../repository/RegistroRepository";
 import {VagaRepository} from "../repository/VagaRepository";
+import { AppError } from "../errors/AppError";
+
+
+
 
 const carroRepository = new CarroRepository();
 const vagaRepository = new VagaRepository();
 const registroRepository = new RegistroRepository();
+function responderErro(res: Response, error: unknown) {
+    if (error instanceof AppError) {
+        return res.status(error.status).json({ erro: error.message });
+    }
+    console.error(error);
+    return res.status(500).json({ erro: "Erro interno" });
+}
 
 export class RegistroService{
     
@@ -44,15 +55,17 @@ export class RegistroService{
     }
 
 
-   async liberarVaga(placa: string) {
-        const registroAtivo = await registroRepository.buscarAtivoPorPlaca(placa);
-        if (!registroAtivo) {
-            throw new Error("Veículo não encontrado ou já liberado.");
-        }
-
-
-        const registroAtualizado = await registroRepository.registrarSaida(registroAtivo.id);
-
-        return registroAtualizado;
+  async liberarVaga(registroId: number) {
+    const registro = await registroRepository.buscarPorId(registroId);
+    if (!registro) {
+        throw new AppError("Registro não encontrado", 404);
     }
+
+    const encerrados = await registroRepository.encerrarSeAtivo(registroId);
+    if (encerrados === 0) {
+        throw new AppError("Este registro já foi encerrado", 409);
+    }
+
+    return registroRepository.buscarPorId(registroId);
+}
 }

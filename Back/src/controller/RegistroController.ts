@@ -57,22 +57,18 @@ async ocupar(req: Request, res: Response) {
 
     async liberar(req: Request, res: Response) {
     try {
-        const { placa } = req.body;
+        const registroId = Number(req.body.registroId);
 
-        if (!placa) {
-            return res.status(400).json({ erro: "placa é obrigatória" });
+        if (!Number.isInteger(registroId) || registroId <= 0) {
+            return res.status(400).json({
+                erro: "registroId é obrigatório e deve ser um número inteiro positivo"
+            });
         }
 
-        const registro = await registroService.liberarVaga(placa);
+        const registro = await registroService.liberarVaga(registroId);
         return res.status(200).json(registro);
     } catch (error) {
-
-        console.error("Erro detalhado na rota liberar:", error); 
-        
-        return res.status(500).json({
-            erro: "erro ao liberar vagas",
-            detalhe: error instanceof Error ? error.message : "Erro desconhecido"
-        });
+        return responderErro(res, error);
     }
 }
 }

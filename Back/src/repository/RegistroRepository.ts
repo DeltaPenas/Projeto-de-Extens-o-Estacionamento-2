@@ -51,4 +51,18 @@ export class RegistroRepository{
             include:{carro:true, vaga:true}
         })
     }
+    async buscarPorId(id: number) {
+    return prisma.registroEstacionamentos.findUnique({
+        where: { id },
+        include: { carro: true, vaga: true }
+    });
+}
+
+async encerrarSeAtivo(id: number) {
+    const resultado = await prisma.registroEstacionamentos.updateMany({
+        where: { id, saida: null },
+        data: { saida: new Date() }
+    });
+    return resultado.count;
+}
 }
