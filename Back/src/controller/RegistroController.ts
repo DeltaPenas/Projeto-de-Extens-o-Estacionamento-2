@@ -1,6 +1,7 @@
 import type {Request, Response} from 'express';
 import { RegistroService } from '../service/RegistroService';
 import { responderErro } from '../errors/ResponderError';
+import { AppError } from '../errors/AppError';
 
 const registroService = new RegistroService();
 
@@ -36,6 +37,7 @@ async ocupar(req: Request, res: Response) {
 
             //adicionando mensagens para conflito de negocios
             } catch (error) {
+                if (error instanceof AppError) return responderErro(res, error);
                 const mensagem = error instanceof Error
                     ? error.message
                     : "Erro desconhecido";

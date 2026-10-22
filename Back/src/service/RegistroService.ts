@@ -3,6 +3,7 @@ import {RegistroRepository} from "../repository/RegistroRepository";
 import {VagaRepository} from "../repository/VagaRepository";
 import { AppError } from "../errors/AppError";
 import { consultarHistorico } from "./consulta-historico";
+import { Prisma } from '@prisma/client';
 
 
 
@@ -42,12 +43,14 @@ export class RegistroService{
             throw new Error("Carro já possui uma entrada ativa");
         }
 
-        const novoRegistro = await registroRepository.registrarEntrada(
-            carro.id,
-            vaga.id
-        );
-
-        return novoRegistro;
+        try {
+            return await registroRepository.registrarEntrada(carro.id, vaga.id);
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+                throw new AppError('O veículo ou a vaga foi removido. Atualize os cadastros antes de registrar a entrada', 404);
+            }
+            throw error;
+        }
     }
 
 

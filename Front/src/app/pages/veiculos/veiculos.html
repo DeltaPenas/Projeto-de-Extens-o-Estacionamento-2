@@ -3,7 +3,7 @@
   <header class="page-heading">
     <div>
       <h1>Veículos</h1>
-      <p>Cadastre e consulte os veículos do estacionamento SEAGRI.</p>
+      <p>Cadastre, consulte e atualize os veículos do estacionamento SEAGRI.</p>
     </div>
     <button
       class="button"
@@ -33,7 +33,14 @@
     <div class="notice registration-feedback" role="status">
       <app-icon name="car" />
       <p>
-        Cadastrando o veículo <strong>{{ pendente.placa }}</strong
+        {{
+          pendente.operacao === 'cadastro'
+            ? 'Cadastrando'
+            : pendente.operacao === 'edicao'
+              ? 'Atualizando'
+              : 'Excluindo'
+        }}
+        o veículo <strong>{{ pendente.dados.placa }}</strong
         >…
       </p>
     </div>
@@ -49,13 +56,7 @@
       <app-icon [name]="resultado.tipo === 'success' ? 'check' : 'warning'" />
       <div class="feedback-content">
         <h2>
-          {{
-            resultado.tipo === 'success'
-              ? 'Último veículo cadastrado'
-              : resultado.tipo === 'error'
-                ? 'Cadastro não realizado'
-                : 'Confirmação do cadastro pendente'
-          }}
+          {{ resultado.titulo }}
         </h2>
         <p>{{ resultado.mensagem }}</p>
         <p class="registration-details">
@@ -68,7 +69,7 @@
       <button
         class="icon-button"
         type="button"
-        aria-label="Fechar mensagem do cadastro"
+        aria-label="Fechar mensagem da operação"
         (click)="cadastro.limparResultado()"
       >
         <app-icon name="close" />
@@ -81,8 +82,14 @@
       <header class="panel-heading form-heading">
         <span class="heading-icon"><app-icon name="car" /></span>
         <div>
-          <h2 id="form-title">Cadastrar veículo</h2>
-          <p>Preencha os dados para adicionar um veículo.</p>
+          <h2 id="form-title">{{ cadastro.edicao() ? 'Editar veículo' : 'Cadastrar veículo' }}</h2>
+          <p>
+            {{
+              cadastro.edicao()
+                ? 'Altere os dados e salve no cadastro selecionado.'
+                : 'Preencha os dados para adicionar um veículo.'
+            }}
+          </p>
         </div>
       </header>
       <form
@@ -102,7 +109,7 @@
               formControlName="placa"
               type="text"
               placeholder="ABC1D23"
-              maxlength="10"
+              maxlength="7"
               autocomplete="off"
               required
               [attr.aria-invalid]="invalido('placa') ? 'true' : null"
@@ -153,7 +160,11 @@
           <div class="form-actions">
             <button class="button button-primary" type="submit" [disabled]="cadastro.cadastrando()">
               <app-icon name="car" />{{
-                cadastro.cadastrando() ? 'Cadastrando…' : 'Cadastrar veículo'
+                cadastro.cadastrando()
+                  ? 'Salvando…'
+                  : cadastro.edicao()
+                    ? 'Salvar alterações'
+                    : 'Cadastrar veículo'
               }}</button
             ><button
               class="button"
@@ -161,7 +172,7 @@
               (click)="cadastro.limparFormulario()"
               [disabled]="cadastro.cadastrando()"
             >
-              Limpar campos
+              {{ cadastro.edicao() ? 'Cancelar edição' : 'Limpar campos' }}
             </button>
           </div>
         </fieldset>
@@ -235,13 +246,14 @@
             >
               <table>
                 <caption class="visually-hidden">
-                  Placa, modelo e cor dos veículos cadastrados
+                  Placa, modelo, cor e ações dos veículos cadastrados
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">PLACA</th>
                     <th scope="col">MODELO</th>
                     <th scope="col">COR</th>
+                    <th scope="col">AÇÕES</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -250,8 +262,30 @@
                       <td>
                         <span class="plate-badge">{{ veiculo.placa }}</span>
                       </td>
-                      <td>{{ veiculo.modelo }}</td>
-                      <td>{{ veiculo.cor }}</td>
+                      <td data-label="Modelo">{{ veiculo.modelo }}</td>
+                      <td data-label="Cor">{{ veiculo.cor }}</td>
+                      <td>
+                        <div class="row-actions">
+                          <button
+                            class="button edit-button"
+                            type="button"
+                            [attr.aria-label]="'Editar veículo ' + veiculo.placa"
+                            [disabled]="cadastro.cadastrando()"
+                            (click)="cadastro.editar(veiculo)"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            class="button delete-button"
+                            type="button"
+                            [attr.aria-label]="'Excluir veículo ' + veiculo.placa"
+                            [disabled]="cadastro.cadastrando()"
+                            (click)="cadastro.solicitarExclusao(veiculo)"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -268,7 +302,7 @@
           <div class="empty-state error-state" role="alert">
             <app-icon name="warning" />
             <h3>Não foi possível carregar os veículos</h3>
-            <p>Tente consultar novamente. O resultado do último cadastro permanece disponível.</p>
+            <p>Tente consultar novamente. O resultado da última operação permanece disponível.</p>
             <button class="button" type="button" (click)="data.carros.reload()">
               Tentar novamente
             </button>
@@ -283,4 +317,5 @@
       }
     </section>
   </div>
+  <app-exclusao-veiculo />
 </div>

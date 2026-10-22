@@ -49,7 +49,7 @@ describe('Listagem e cadastro reais de veículos', () => {
     expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
     expect(element.querySelector('tbody')?.textContent).toContain('ABC1D23');
     expect(element.querySelector('tbody')?.textContent).toContain('Ônix');
-    expect(element.querySelectorAll('.delete-button')).toHaveLength(0);
+    expect(element.querySelectorAll('.delete-button')).toHaveLength(1);
   });
 
   it('busca por placa, modelo e cor sem exigir acentos', () => {

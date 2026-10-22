@@ -13,6 +13,7 @@ import { CadastroCarroRequest } from '../../core/models/parking';
 import { CadastroVeiculoService } from '../../core/services/cadastro-veiculo.service';
 import { ParkingDataService } from '../../core/services/parking-data.service';
 import { Icon } from '../../shared/icon/icon';
+import { ExclusaoVeiculo } from './exclusao-veiculo';
 
 function normalizar(value: string) {
   return value
@@ -23,7 +24,7 @@ function normalizar(value: string) {
 
 @Component({
   selector: 'app-veiculos',
-  imports: [ReactiveFormsModule, DatePipe, Icon],
+  imports: [ReactiveFormsModule, DatePipe, Icon, ExclusaoVeiculo],
   templateUrl: './veiculos.html',
   styleUrl: './veiculos.css',
 })
@@ -48,6 +49,14 @@ export class Veiculos {
       mixedReadWrite: () => {
         this.cadastro.resultado();
         this.feedback()?.nativeElement.scrollIntoView?.({ block: 'nearest' });
+      },
+    });
+    afterRenderEffect({
+      mixedReadWrite: () => {
+        if (this.cadastro.edicao()) {
+          this.formulario()?.nativeElement.scrollIntoView?.({ block: 'nearest' });
+          this.formulario()?.nativeElement.querySelector<HTMLInputElement>('#placa')?.focus();
+        }
       },
     });
   }

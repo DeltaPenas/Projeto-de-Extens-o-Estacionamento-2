@@ -1,0 +1,51 @@
+dialog {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 26px;
+  color: var(--text);
+  box-shadow: 0 20px 80px #172a4940;
+}
+dialog::backdrop {
+  background: #14254080;
+}
+h2 {
+  font-size: 19px;
+  margin-bottom: 14px;
+}
+p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.8;
+}
+dl {
+  display: grid;
+  grid-template-columns: 65px 1fr;
+  gap: 10px;
+  margin: 20px 0;
+  font-size: 13px;
+}
+dt {
+  color: var(--text-muted);
+}
+dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.actions .button {
+  flex: 1 1 140px;
+}
+.button-danger {
+  background: #b52f3a;
+  border-color: #b52f3a;
+  color: white;
+}

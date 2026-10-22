@@ -19,4 +19,12 @@ export class CarrosService {
   criar(dados: CadastroCarroRequest) {
     return this.http.post<unknown>(this.url, dados, { observe: 'response' });
   }
+
+  atualizar(id: Carro['id'], dados: CadastroCarroRequest) {
+    return this.http.put<unknown>(`${this.url}/${id}`, dados, { observe: 'response' });
+  }
+
+  excluir(id: Carro['id']) {
+    return this.http.delete<unknown>(`${this.url}/${id}`, { observe: 'response' });
+  }
 }

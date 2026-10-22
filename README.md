@@ -8,7 +8,7 @@ O frontend oferece Dashboard com indicadores de ocupação, consulta e busca loc
 
 O Dashboard mostra a situação de cada veículo, sua vaga e horário de entrada, com filtros e atalho para abrir a vaga selecionada no mapa. A página Estacionamento também apresenta o histórico abaixo do mapa e dos detalhes, com placa, veículo, vaga, entrada, saída, permanência encerrada, situação e paginação. É possível filtrar por placa, período de entrada e movimentações abertas ou encerradas.
 
-A página Veículos consulta `GET /carros` e cadastra por `POST /carros`, com placa, modelo e cor. O cadastro confirmado atualiza a lista compartilhada com o Dashboard e a seleção de entrada, sem recarregar o navegador. Há validação dos campos, bloqueio de envio duplicado, confirmação e recuperação de falhas. A listagem tem pesquisa local e estados de carregamento, erro e lista vazia.
+A página Veículos consulta `GET /carros`, cadastra por `POST /carros`, edita por `PUT /carros/:id` e exclui por `DELETE /carros/:id`. A edição preenche o formulário existente; a exclusão pede confirmação e respeita os bloqueios de veículos estacionados ou com histórico. As operações atualizam os dados compartilhados com o Dashboard e a seleção de entrada, sem recarregar o navegador. Há validação dos campos, bloqueio de envio duplicado, confirmação e recuperação de falhas. A listagem tem pesquisa local e estados de carregamento, erro e lista vazia.
 
 A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre; `registroAtivo` identifica a movimentação aberta e o veículo, ou é `null` quando livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. Entradas e saídas apresentam confirmação e refazem as consultas do mapa e dos indicadores. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
 
@@ -162,15 +162,15 @@ npm run build
 npm test -- --watch=false
 ```
 
-Saída do build: `Front/dist/estacionamento/`. Os 94 testes cobrem navegação entre as três páginas, cadastro de veículos e atualização compartilhada sem F5, situação dos veículos e atalho para a vaga, cores do mapa, indicadores, entrada e saída, histórico com filtros e paginação, atualização e tratamento de falhas. Fixtures ficam restritas aos testes. O CSS da página Veículos reutiliza estilos globais e atende aos budgets existentes, sem aumentar os limites.
+Saída do build: `Front/dist/estacionamento/`. Os 112 testes cobrem navegação entre as três páginas, cadastro, edição e exclusão de veículos, confirmação e cancelamento, atualização compartilhada sem F5, situação dos veículos e atalho para a vaga, cores do mapa, indicadores, entrada e saída, histórico com filtros e paginação, atualização e tratamento de falhas. Fixtures ficam restritas aos testes. O CSS da página Veículos reutiliza estilos globais e atende aos budgets existentes, sem aumentar os limites.
 
-Em `Back/`, execute `npm test` para rodar os 37 testes de regressão de status, saída e histórico. Eles verificam os contratos, filtros, paginação, IDs inválidos e erros `400`, `404`, `409` e `500`, substituindo services ou repositories durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
+Em `Back/`, execute `npm test` para rodar os 78 testes de regressão de status, saída, histórico e veículos. Eles verificam contratos, normalização, filtros, paginação, IDs inválidos, bloqueios de exclusão e erros `400`, `404`, `409` e `500`, substituindo services ou repositories durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
 
 A verificação de tipos com `npx tsc --noEmit` ainda aponta uma dependência ausente (`@prisma/orm-postgres/runtime`) no artefato antigo `src/prisma/db.ts`. Esse arquivo de Prisma Next não é utilizado pelas rotas atuais, que usam Prisma Client 6; a pendência não impede a execução da API nem dos testes de controllers.
 
 ## Integração e principais rotas
 
-O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**`, `/registros` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros`, `POST /carros`, `GET /registros`, `POST /registros/entrada` e `POST /registros/saida`.
+O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**`, `/registros` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros`, `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id`, `GET /registros`, `POST /registros/entrada` e `POST /registros/saida`.
 
 | Rotas existentes                                        | Situação                                                              |
 | ------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -179,7 +179,7 @@ O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativa
 | `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código                |
 | `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                                  |
 | `POST /carros`                                          | Cadastro integrado à página Veículos com `{ placa, modelo, cor }` e retorno `201` |
-| `PUT /carros/:id`, `DELETE /carros/:id`                 | Alteração e exclusão existentes na API; sem integração na página Veículos |
+| `PUT /carros/:id`, `DELETE /carros/:id`                 | Edição integrada com retorno `200`; exclusão com confirmação e retorno `204`, bloqueada para veículos estacionados ou com histórico |
 | `POST /registros/entrada`                               | Integrado com `{ carroid, vagaid }`; concorrência pendente no backend |
 | `POST /registros/saida`                                 | Integrado com `{ registroId }` inteiro e positivo; erros de negócio em JSON |
 | `GET /registros`                                       | Histórico paginado com veículo, vaga e filtros por placa, período de entrada e situação |
@@ -188,11 +188,17 @@ O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à AP
 
 ## Cadastro de veículos
 
-A página `/veiculos` usa a mesma lista de `ParkingDataService` consumida pelo Dashboard e pelo formulário de entrada. `POST /carros` envia apenas `placa`, `modelo` e `cor`; o ID é atribuído pelo banco. No frontend, a placa é convertida para maiúsculas e tem espaços e hífens removidos; modelo e cor têm espaços das extremidades removidos. Os campos são obrigatórios, com os limites de 80 caracteres no modelo e 40 na cor.
+A página `/veiculos` usa a mesma lista de `ParkingDataService` consumida pelo Dashboard e pelo formulário de entrada. `POST /carros` envia apenas `placa`, `modelo` e `cor`; o ID é atribuído pelo banco. Frontend e backend convertem a placa para maiúsculas e removem espaços e hífens; modelo e cor têm espaços das extremidades removidos. Os campos são obrigatórios, com os limites de 80 caracteres no modelo e 40 na cor. Uma placa já cadastrada retorna `409` em JSON, sem detalhes internos do banco.
 
 O envio e o rascunho ficam na sessão. Navegar durante o cadastro não cancela o POST; o `201` confirma o cadastro e limpa o formulário. A resposta é validada antes de exibir o ID, e a lista é consultada novamente, cancelando leituras anteriores que poderiam substituir o resultado por dados desatualizados. O novo veículo aparece no Dashboard e na seleção de entrada após essa consulta, sem F5.
 
 Falha de atualização da lista preserva a confirmação e permite repetir somente a leitura. Uma falha de conexão ou timeout mantém os dados preenchidos e apresenta confirmação incerta, orientando a conferir a placa na lista antes de tentar cadastrar novamente. O POST não é repetido automaticamente. Mensagens internas do Prisma não são exibidas na interface.
+
+Editar preenche o mesmo formulário com placa, modelo e cor do veículo selecionado. Salvar envia esses campos a `PUT /carros/:id`, mantendo o ID original; o `200` confirma a alteração. Cancelar não envia requisição e restaura um eventual rascunho de novo cadastro. É possível corrigir dados de um veículo estacionado sem alterar sua movimentação. A API continua aceitando alterações parciais, preservando os campos omitidos.
+
+Excluir abre uma confirmação com os dados do cadastro; Cancelar ou Escape não enviam `DELETE`. Confirmar envia `DELETE /carros/:id`, sem corpo, e o `204` confirma a remoção. Veículo inexistente retorna `404`; estacionado retorna `409` com orientação para registrar a saída; qualquer histórico, mesmo encerrado, também bloqueia a exclusão com `409`. Registrar a saída não libera a exclusão de um veículo que já tem histórico. Nenhuma movimentação é apagada. A FK existente protege os vínculos se uma entrada acontecer durante a exclusão; se o cadastro for removido antes da entrada, a entrada rejeitada pela FK retorna `404` em JSON. Não há nova migration.
+
+Edição e exclusão refazem as consultas de veículos e ocupação, além do histórico caso já tenha sido carregado, cancelando leituras anteriores. Dashboard, seleção de entrada, detalhes do ocupante e histórico passam a mostrar os dados atuais sem F5. O histórico usa os dados atuais do cadastro vinculado, sem uma cópia dos atributos antigos do veículo. Os envios pertencem à sessão e não são cancelados pela navegação; nenhuma mutação é repetida automaticamente após falha de rede ou timeout. A confirmação permanece mesmo se uma consulta posterior falhar.
 
 ## Consulta de histórico
 
@@ -238,7 +244,7 @@ Na interface, as datas seguem o fuso do navegador e o último dia selecionado é
 - Os detalhes do ocupante e a saída exigem um registro ativo válido e correspondente à vaga. Dados ausentes ou inconsistentes desabilitam a saída. Para filtrar os veículos de entrada, a consulta deve cobrir todos os cadastros, inclusive vagas fora do mapa; informações incompletas bloqueiam a seleção.
 - O backend permite reutilizar vagas após a saída, mas ainda precisa garantir uma entrada ativa por vaga e por veículo em requisições simultâneas. O bloqueio de envio duplicado no frontend se aplica somente à sessão atual.
 - A confirmação da última movimentação mostra registro, vaga, veículo e horários retornados pela operação. Ela fica apenas na sessão e não substitui a consulta do ocupante atual. Falhas na atualização preservam a confirmação, sem repetir o envio.
-- A edição e a exclusão de veículos na interface continuam para entregas próprias; o cadastro e a listagem já estão integrados. A exclusão simulada da página anterior foi removida.
+- A exclusão de veículos com movimentações, abertas ou encerradas, é bloqueada para preservar o histórico. Arquivamento de cadastros ainda não existe.
 - Não há seed versionado dos cadastros.
 - Uma posição só aparece como “Não cadastrada” após consulta bem-sucedida sem registro correspondente. Falhas permanecem como cadastro não verificado.
 - O botão Atualizar refaz as consultas; não há atualização automática. O estado compartilhado mantém mapa e Dashboard coerentes ao navegar entre as páginas.
