@@ -27,9 +27,14 @@
   white-space: nowrap;
 }
 .search-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
   padding: 19px 24px;
 }
 .search-field {
+  flex: 1 1 220px;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -65,12 +70,13 @@
   max-height: 420px;
 }
 table {
+  min-width: 620px;
   width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
 th {
-  padding: 13px 24px;
+  padding: 13px 14px;
   color: var(--text-muted);
   font-size: 9px;
   font-weight: 650;
@@ -81,7 +87,7 @@ th {
   top: 0;
 }
 td {
-  padding: 18px 24px;
+  padding: 18px 14px;
   font-size: 12px;
   border-bottom: 1px solid #edf0f5;
   overflow-wrap: anywhere;
@@ -101,6 +107,44 @@ tbody tr:hover {
   letter-spacing: 0.6px;
   font-size: 11px;
   white-space: nowrap;
+}
+.status-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.status-filter select {
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  color: var(--text);
+  font: inherit;
+}
+.status-filter select:focus-visible {
+  outline: 3px solid #88b4ff;
+}
+.vehicle-description {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-secondary);
+}
+.entry-time {
+  min-width: 105px;
+}
+.car-parked {
+  background: #fbe8e8;
+  color: #b23737;
+}
+.car-available {
+  background: #e2f3e9;
+  color: #24734a;
+}
+.outside-map {
+  color: var(--text-muted);
+  font-size: 11px;
 }
 .table-footer {
   padding: 15px 24px;

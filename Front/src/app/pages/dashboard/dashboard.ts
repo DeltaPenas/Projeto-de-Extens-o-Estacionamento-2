@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PHYSICAL_CAPACITY } from '../../core/parking-layout';
+import { PARKING_ROWS, PHYSICAL_CAPACITY } from '../../core/parking-layout';
 import { ParkingDataService } from '../../core/services/parking-data.service';
 import { Icon } from '../../shared/icon/icon';
 import { MetricCard } from '../../shared/metric-card/metric-card';
@@ -23,6 +23,8 @@ export class Dashboard {
   protected readonly data = inject(ParkingDataService);
   protected readonly capacity = PHYSICAL_CAPACITY;
   protected readonly search = signal('');
+  protected readonly situacao = signal('');
+  protected readonly physicalNumbers = new Set(PARKING_ROWS.flatMap((row) => row.numeros));
   protected readonly loading = computed(
     () => this.data.parkingLoading() || this.data.carros.status() === 'loading',
   );
@@ -32,9 +34,13 @@ export class Dashboard {
   });
   protected readonly filteredCars = computed(() => {
     const term = normalize(this.search().trim());
-    return this.data.carros
-      .items()
-      .filter((carro) => normalize(`${carro.placa} ${carro.modelo} ${carro.cor}`).includes(term));
+    return this.data
+      .carrosComSituacao()
+      .filter(
+        (carro) =>
+          normalize(`${carro.placa} ${carro.modelo} ${carro.cor}`).includes(term) &&
+          (!this.situacao() || carro.situacao === this.situacao()),
+      );
   });
 
   constructor() {

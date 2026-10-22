@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ParkingDataService } from '../../core/services/parking-data.service';
 import { RegistrosService } from '../../core/services/registros.service';
 import { Parking } from './parking';
+import { flushEmptyHistory } from '../../testing/history';
 
 describe('Ocupante, saída e veículos disponíveis', () => {
   let fixture: ComponentFixture<Parking>;
@@ -38,7 +39,10 @@ describe('Ocupante, saída e veículos disponíveis', () => {
     element = fixture.nativeElement;
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    flushEmptyHistory(http);
+    http.verify();
+  });
 
   function statuses(occupied = true) {
     return vagas.map((vaga) => ({
@@ -168,7 +172,7 @@ describe('Ocupante, saída e veículos disponíveis', () => {
     fixture.detectChanges();
     expect(element.textContent).toContain('Nenhum veículo disponível para entrada');
     expect(element.textContent).not.toContain('Nenhum veículo cadastrado');
-    expect(element.querySelector('form')).toBeNull();
+    expect(element.querySelector('app-entry-form form')).toBeNull();
   });
 
   it.each([
@@ -231,16 +235,14 @@ describe('Ocupante, saída e veículos disponíveis', () => {
     select();
     clickExit();
     TestBed.inject(ParkingDataService).ocupacao.load();
-    http
-      .expectOne('/vagas/status')
-      .flush([
-        {
-          ...vagas[0],
-          status: true,
-          registroAtivo: { ...ativo, id: 57, carroId: 82, carro: carros[1] },
-        },
-        statuses()[1],
-      ]);
+    http.expectOne('/vagas/status').flush([
+      {
+        ...vagas[0],
+        status: true,
+        registroAtivo: { ...ativo, id: 57, carroId: 82, carro: carros[1] },
+      },
+      statuses()[1],
+    ]);
     fixture.detectChanges();
     expect(element.querySelector('.exit-confirmation')).toBeNull();
     expect(element.querySelector('.vehicle-details')?.textContent).toContain('DEF4G56');

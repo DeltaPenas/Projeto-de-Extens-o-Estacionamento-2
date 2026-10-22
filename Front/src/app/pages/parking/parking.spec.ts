@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Parking } from './parking';
+import { flushEmptyHistory } from '../../testing/history';
 
 describe('Mapa do estacionamento', () => {
   let fixture: ComponentFixture<Parking>;
@@ -19,7 +20,10 @@ describe('Mapa do estacionamento', () => {
     element = fixture.nativeElement;
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    flushEmptyHistory(http);
+    http.verify();
+  });
 
   it('associa pelo número, preserva ID diferente e permite seleção pelo teclado', () => {
     http.expectOne('/vagas').flush([

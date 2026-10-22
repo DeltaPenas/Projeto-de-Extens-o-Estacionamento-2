@@ -6,6 +6,8 @@ Projeto de extensão universitária desenvolvido para auxiliar na organização 
 
 O frontend oferece Dashboard com indicadores de ocupação, consulta e busca local de veículos, mapa SVG interativo e painel com veículo, horário de entrada e registro ativo da vaga ocupada. O formulário de entrada oferece somente veículos disponíveis. A saída é solicitada pelo painel, com confirmação e envio automático do ID do registro. A associação usa `vaga.numero`; o ID do banco permanece separado.
 
+O Dashboard mostra a situação de cada veículo, sua vaga e horário de entrada, com filtros e atalho para abrir a vaga selecionada no mapa. A página Estacionamento também apresenta o histórico abaixo do mapa e dos detalhes, com placa, veículo, vaga, entrada, saída, permanência encerrada, situação e paginação. É possível filtrar por placa, período de entrada e movimentações abertas ou encerradas.
+
 A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre; `registroAtivo` identifica a movimentação aberta e o veículo, ou é `null` quando livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. Entradas e saídas apresentam confirmação e refazem as consultas do mapa e dos indicadores. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
 
 Os fluxos de ocupante, entrada e saída foram verificados no navegador com as rotas reais e PostgreSQL em banco temporário. A consulta de status utiliza `listarComStatus()` e os erros de negócio da saída são tratados em JSON, com validação estrita do ID recebido. Os cadastros locais de demonstração foram preservados.
@@ -158,15 +160,15 @@ npm run build
 npm test -- --watch=false
 ```
 
-Saída do build: `Front/dist/estacionamento/`. Os testes cobrem navegação, consulta compartilhada, busca de veículos, associação entre número e ID, cores do mapa, indicadores, entrada, detalhes do ocupante, confirmação e saída pelo registro ativo, filtro de veículos disponíveis, atualização e tratamento de falhas. Fixtures ficam restritas aos testes.
+Saída do build: `Front/dist/estacionamento/`. Os 72 testes cobrem navegação, consulta compartilhada, situação dos veículos e atalho para a vaga, cores do mapa, indicadores, entrada e saída, histórico com filtros e paginação, atualização e tratamento de falhas. Fixtures ficam restritas aos testes.
 
-Em `Back/`, execute `npm test` para rodar os 15 testes de regressão dos controllers de status e saída. Eles verificam o contrato, IDs inválidos e erros `400`, `404`, `409` e `500`, substituindo os services durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
+Em `Back/`, execute `npm test` para rodar os 37 testes de regressão de status, saída e histórico. Eles verificam os contratos, filtros, paginação, IDs inválidos e erros `400`, `404`, `409` e `500`, substituindo services ou repositories durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
 
 A verificação de tipos com `npx tsc --noEmit` ainda aponta uma dependência ausente (`@prisma/orm-postgres/runtime`) no artefato antigo `src/prisma/db.ts`. Esse arquivo de Prisma Next não é utilizado pelas rotas atuais, que usam Prisma Client 6; a pendência não impede a execução da API nem dos testes de controllers.
 
 ## Integração e principais rotas
 
-O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros`, `POST /registros/entrada` e `POST /registros/saida`.
+O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**`, `/registros` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros`, `GET /registros`, `POST /registros/entrada` e `POST /registros/saida`.
 
 | Rotas existentes                                        | Situação                                                              |
 | ------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -177,8 +179,48 @@ O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativa
 | `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código                |
 | `POST /registros/entrada`                               | Integrado com `{ carroid, vagaid }`; concorrência pendente no backend |
 | `POST /registros/saida`                                 | Integrado com `{ registroId }` inteiro e positivo; erros de negócio em JSON |
+| `GET /registros`                                       | Histórico paginado com veículo, vaga e filtros por placa, período de entrada e situação |
 
 O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à API na mesma origem ou configure outra origem com CORS. Não há autenticação ou configuração de CORS na API atual.
+
+## Consulta de histórico
+
+`GET /registros` retorna movimentações abertas e encerradas, em ordem de `entrada` decrescente, com desempate por `id` decrescente. A consulta é somente leitura e utiliza as tabelas existentes, sem nova migration.
+
+| Parâmetro | Comportamento |
+| --------- | ------------- |
+| `page` | Inteiro positivo; padrão `1`. |
+| `limit` | Inteiro de `1` a `100`; padrão `20`. O frontend utiliza `10`, `20` ou `50`. |
+| `placa` | Busca parcial, sem diferenciar maiúsculas/minúsculas, com até 20 caracteres. |
+| `situacao` | `abertos` para saída nula, `encerrados` para saída preenchida; omitir inclui ambos. |
+| `dataInicio` | Horário de entrada a partir deste instante, inclusive; data ISO com horário e fuso. |
+| `dataFim` | Horário de entrada anterior a este instante, exclusivo; data ISO com horário e fuso. |
+
+Exemplo: `GET /registros?page=1&limit=10&placa=ABC&situacao=encerrados`.
+
+```json
+{
+  "items": [
+    {
+      "id": 56,
+      "entrada": "2026-10-21T12:00:00.000Z",
+      "saida": "2026-10-21T13:25:00.000Z",
+      "carroId": 81,
+      "vagaId": 205,
+      "carro": { "id": 81, "placa": "ABC1D23", "modelo": "Onix", "cor": "Branco" },
+      "vaga": { "id": 205, "numero": 4 }
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1
+}
+```
+
+Os filtros são combinados. Itens e total são consultados na mesma transação com snapshot consistente. Parâmetros inválidos retornam `400` com `{ "erro": "..." }`; falhas internas retornam `500` com mensagem genérica. Uma página além do total retorna itens vazios e mantém o total e a página solicitada; sem resultados, `totalPages` é `0`.
+
+Na interface, as datas seguem o fuso do navegador e o último dia selecionado é incluído integralmente. O frontend converte seu fim para o início do dia seguinte antes de consultar a API. Após entradas e saídas, o histórico já carregado é consultado novamente na primeira página, mantendo os filtros aplicados. Falha nessa leitura não desfaz a confirmação da movimentação.
 
 ## Limitações e próximas entregas
 
@@ -186,6 +228,6 @@ O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à AP
 - O backend permite reutilizar vagas após a saída, mas ainda precisa garantir uma entrada ativa por vaga e por veículo em requisições simultâneas. O bloqueio de envio duplicado no frontend se aplica somente à sessão atual.
 - A confirmação da última movimentação mostra registro, vaga, veículo e horários retornados pela operação. Ela fica apenas na sessão e não substitui a consulta do ocupante atual. Falhas na atualização preservam a confirmação, sem repetir o envio.
 - A página de cadastro de veículos continua para uma entrega própria.
-- Não há endpoint de histórico nem seed versionado dos cadastros.
+- Não há seed versionado dos cadastros.
 - Uma posição só aparece como “Não cadastrada” após consulta bem-sucedida sem registro correspondente. Falhas permanecem como cadastro não verificado.
 - O botão Atualizar refaz as consultas; não há atualização automática. O estado compartilhado mantém mapa e Dashboard coerentes ao navegar entre as páginas.

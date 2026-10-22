@@ -1,0 +1,143 @@
+:host {
+  display: block;
+  margin-top: 24px;
+}
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.history-filters {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 20px 24px;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.history-filters label:first-child {
+  flex: 1 1 170px;
+}
+input,
+select {
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  color: var(--text);
+  background: white;
+  min-height: 39px;
+}
+select:focus-visible {
+  outline: 3px solid #88b4ff;
+  outline-offset: 3px;
+}
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+.filter-help,
+.filter-error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.filter-help {
+  color: var(--text-muted);
+}
+.filter-error {
+  color: #a33b32;
+}
+.history-table {
+  overflow-x: auto;
+  max-height: 520px;
+}
+table {
+  width: 100%;
+  min-width: 830px;
+  border-collapse: collapse;
+  text-align: left;
+}
+th {
+  position: sticky;
+  top: 0;
+  background: #f8fafd;
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: 0.6px;
+  padding: 14px 20px;
+  border-block: 1px solid var(--border);
+}
+td {
+  padding: 16px 20px;
+  font-size: 12px;
+  border-bottom: 1px solid #edf0f5;
+}
+tbody tr:hover {
+  background: #fafbfe;
+}
+small {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+.history-open {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.history-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+}
+.history-footer > div {
+  margin-right: auto;
+}
+.history-footer label {
+  flex-direction: row;
+  align-items: center;
+}
+nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+nav .button:disabled {
+  cursor: not-allowed;
+}
+@media (max-width: 760px) {
+  .history-filters,
+  .history-footer {
+    padding: 18px;
+  }
+  .history-filters label {
+    flex: 1 1 140px;
+  }
+  .filter-actions {
+    flex-basis: 100%;
+  }
+  .history-heading .button {
+    width: 100%;
+  }
+  nav {
+    gap: 7px;
+  }
+}

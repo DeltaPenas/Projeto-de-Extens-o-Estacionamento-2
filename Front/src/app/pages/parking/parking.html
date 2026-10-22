@@ -8,7 +8,7 @@
     <button
       class="button"
       type="button"
-      (click)="data.refreshParking()"
+      (click)="refresh()"
       [disabled]="data.parkingLoading() || registros.registrando()"
     >
       <app-icon name="refresh" />Atualizar
@@ -130,7 +130,7 @@
 
     <aside id="slot-details" class="panel detail-panel" aria-labelledby="details-title">
       <header class="panel-heading detail-heading">
-        <h2 id="details-title">Detalhes da vaga</h2>
+        <h2 id="details-title" tabindex="-1">Detalhes da vaga</h2>
         @if (selected()) {
           <button
             class="icon-button"
@@ -276,4 +276,5 @@
       }
     </aside>
   </div>
+  <app-parking-history />
 </div>
