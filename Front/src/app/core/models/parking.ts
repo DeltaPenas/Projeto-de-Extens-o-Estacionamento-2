@@ -22,6 +22,8 @@ export interface Carro {
   cor: string;
 }
 
+export type CadastroCarroRequest = Omit<Carro, 'id'>;
+
 export interface CarroComSituacao extends Carro {
   situacao: 'estacionado' | 'disponivel' | 'nao-verificada';
   ocupacao?: { vaga: Vaga; entrada: string; registroId: number };

@@ -1,84 +1,68 @@
+import { DatePipe } from '@angular/common';
+import {
+  afterRenderEffect,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { CadastroCarroRequest } from '../../core/models/parking';
+import { CadastroVeiculoService } from '../../core/services/cadastro-veiculo.service';
+import { ParkingDataService } from '../../core/services/parking-data.service';
+import { Icon } from '../../shared/icon/icon';
 
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-
-interface Veiculo {
-  id: number;
-  placa: string;
-  modelo: string;
-  cor: string;
+function normalizar(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR');
 }
 
 @Component({
   selector: 'app-veiculos',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [ReactiveFormsModule, DatePipe, Icon],
   templateUrl: './veiculos.html',
   styleUrl: './veiculos.css',
 })
 export class Veiculos {
-  // Dados fictícios apenas para visualizar a página
-  veiculos: Veiculo[] = [
-    { id: 1, placa: 'ABC1D23', modelo: 'Fiat Uno', cor: 'Branco' },
-    { id: 2, placa: 'XYZ1234', modelo: 'Volkswagen Gol', cor: 'Prata' },
-  ];
+  protected readonly data = inject(ParkingDataService);
+  protected readonly cadastro = inject(CadastroVeiculoService);
+  protected readonly pesquisa = signal('');
+  protected readonly veiculosFiltrados = computed(() => {
+    const termo = normalizar(this.pesquisa().trim());
+    return this.data.carros
+      .items()
+      .filter((veiculo) =>
+        normalizar(`${veiculo.placa} ${veiculo.modelo} ${veiculo.cor}`).includes(termo),
+      );
+  });
+  private readonly feedback = viewChild<ElementRef<HTMLElement>>('feedback');
+  private readonly formulario = viewChild<ElementRef<HTMLFormElement>>('formulario');
 
-  placa = '';
-  modelo = '';
-  cor = '';
-  pesquisa = '';
-
-  carregando = false;
-  mensagem = '';
-  tipoMensagem: 'sucesso' | 'erro' = 'sucesso';
-
-  get veiculosFiltrados(): Veiculo[] {
-    const termo = this.pesquisa.trim().toLowerCase();
-
-    if (!termo) return this.veiculos;
-
-    return this.veiculos.filter(v =>
-      [v.placa, v.modelo, v.cor].some(valor =>
-        valor.toLowerCase().includes(termo)
-      )
-    );
-  }
-
-  cadastrarVeiculo(): void {
-    if (!this.placa.trim() || !this.modelo.trim() || !this.cor.trim()) {
-      this.exibirMensagem('Preencha todos os campos.', 'erro');
-      return;
-    }
-
-    this.veiculos.unshift({
-      id: Date.now(),
-      placa: this.placa.trim().toUpperCase(),
-      modelo: this.modelo.trim(),
-      cor: this.cor.trim(),
+  constructor() {
+    this.data.carros.ensureLoaded();
+    afterRenderEffect({
+      mixedReadWrite: () => {
+        this.cadastro.resultado();
+        this.feedback()?.nativeElement.scrollIntoView?.({ block: 'nearest' });
+      },
     });
-
-    this.placa = '';
-    this.modelo = '';
-    this.cor = '';
-
-    this.exibirMensagem('Veículo adicionado à lista visual.', 'sucesso');
   }
 
-  excluirVeiculo(id: number): void {
-    this.veiculos = this.veiculos.filter(v => v.id !== id);
-    this.exibirMensagem('Veículo removido da lista visual.', 'sucesso');
+  protected invalido(campo: keyof CadastroCarroRequest) {
+    const control = this.cadastro.formulario.controls[campo];
+    return control.touched && control.invalid;
   }
 
-  limparPesquisa(): void {
-    this.pesquisa = '';
-  }
-
-  private exibirMensagem(
-    mensagem: string,
-    tipo: 'sucesso' | 'erro'
-  ): void {
-    this.mensagem = mensagem;
-    this.tipoMensagem = tipo;
+  protected cadastrarVeiculo() {
+    this.cadastro.cadastrar();
+    const campo = Object.entries(this.cadastro.formulario.controls).find(
+      ([, control]) => control.invalid,
+    );
+    if (campo)
+      this.formulario()?.nativeElement.querySelector<HTMLInputElement>(`#${campo[0]}`)?.focus();
   }
 }
