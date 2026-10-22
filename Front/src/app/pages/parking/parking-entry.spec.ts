@@ -37,7 +37,13 @@ describe('Entrada de veículo pelo painel da vaga', () => {
 
   function loadParking(occupied = false) {
     http.expectOne('/vagas').flush(vagas);
-    http.expectOne('/vagas/status').flush(vagas.map((vaga) => ({ ...vaga, status: occupied })));
+    http.expectOne('/vagas/status').flush(
+      vagas.map((vaga) => ({
+        ...vaga,
+        status: occupied,
+        registroAtivo: occupied ? { ...registro, vagaId: vaga.id } : null,
+      })),
+    );
     fixture.detectChanges();
   }
 
@@ -71,9 +77,13 @@ describe('Entrada de veículo pelo painel da vaga', () => {
 
   function refresh(occupied = true) {
     http.expectOne('/vagas').flush(vagas);
-    http
-      .expectOne('/vagas/status')
-      .flush(vagas.map((vaga) => ({ ...vaga, status: occupied && vaga.id === 101 })));
+    http.expectOne('/vagas/status').flush(
+      vagas.map((vaga) => ({
+        ...vaga,
+        status: occupied && vaga.id === 101,
+        registroAtivo: occupied && vaga.id === 101 ? registro : null,
+      })),
+    );
     fixture.detectChanges();
   }
 

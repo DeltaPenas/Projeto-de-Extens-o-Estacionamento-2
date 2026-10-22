@@ -4,7 +4,8 @@ import { PHYSICAL_CAPACITY } from '../../core/parking-layout';
 import { ParkingDataService } from '../../core/services/parking-data.service';
 import { RegistrosService } from '../../core/services/registros.service';
 import { EntryForm } from './entry-form/entry-form';
-import { EntryFeedback } from './entry-feedback/entry-feedback';
+import { MovementFeedback } from './movement-feedback/movement-feedback';
+import { ExitAction } from './exit-action/exit-action';
 import { Icon } from '../../shared/icon/icon';
 import {
   associateSlots,
@@ -15,7 +16,7 @@ import {
 
 @Component({
   selector: 'app-parking',
-  imports: [Icon, ParkingMap, DatePipe, EntryForm, EntryFeedback],
+  imports: [Icon, ParkingMap, DatePipe, EntryForm, MovementFeedback, ExitAction],
   templateUrl: './parking.html',
   styleUrl: './parking.css',
 })

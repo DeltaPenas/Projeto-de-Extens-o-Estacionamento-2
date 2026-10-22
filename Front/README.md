@@ -14,7 +14,7 @@ src/app/
     services/                      # HTTP e estado compartilhado das consultas
   pages/
     dashboard/                     # Indicadores e veículos cadastrados
-    parking/                       # Mapa, painel, formulário e confirmação de entrada
+    parking/                       # Mapa, ocupante, entrada, confirmação e saída
   shared/
     icon/                          # Ícones SVG sem dependência externa
     metric-card/                   # Cards reutilizáveis
@@ -34,11 +34,16 @@ src/app/
   consultas; cadastro, ocupação e carros têm estados independentes, timeout de 15 segundos e
   validação do formato retornado. Resposta inválida não é tratada como lista vazia.
 - A associação do status ao cadastro exige ID e número correspondentes. O contrato
-  de ocupação é `{ id, numero, status }`, com booleano obrigatório: `true` significa
-  ocupada e `false`, livre. Dados de veículo ou horário não são inferidos.
+  de ocupação é `{ id, numero, status, registroAtivo }`, com booleano obrigatório:
+  `true` significa ocupada e `false`, livre. O registro ativo contém `id`, `carroId`,
+  `vagaId`, `entrada`, `saida: null` e `carro: { id, placa, modelo, cor }`.
+  Vagas livres retornam `registroAtivo: null`. Datas, IDs e vínculos são validados
+  antes de habilitar a saída; dados de veículo ou horário não são inferidos.
 - `RegistrosService`: `POST /registros/entrada`, com o contrato atual em minúsculas:
   `{ carroid: number, vagaid: number }`. Os valores são IDs do banco, não números físicos.
-  A saída e a consulta dos detalhes da ocupação ainda não são integradas.
+- O mesmo service envia `POST /registros/saida`, com `{ registroId: number }`,
+  obtido automaticamente da vaga selecionada. Entradas e saídas compartilham o
+  bloqueio de envio durante uma movimentação pendente.
 
 ## Convenção física e disponibilidade
 
@@ -76,26 +81,47 @@ atuais. Falhas de ocupação têm opção de repetir apenas essa consulta, prese
 cadastros e veículos. A atualização feita em uma página é refletida na outra ao
 navegar, sem recarregar o navegador. Não há polling automático.
 
-## Integração futura
+## Detalhes do ocupante e registro de saída
 
-Veículo estacionado e horário de entrada dependem de um contrato de consulta que
-ainda precisa ser disponibilizado pelo backend. `GET /vagas/status` informa
-somente a disponibilidade.
+Selecionar uma vaga ocupada mostra placa, modelo, cor, horário de entrada e ID do
+registro ativo retornados na consulta de ocupação. O botão Registrar saída abre
+uma confirmação com veículo e vaga. Cancelar não envia a operação; Confirmar saída
+envia apenas o ID do registro ativo, sem digitação de placa. Trocar de vaga ou de
+registro descarta a confirmação aberta. O envio revalida o registro contra o estado
+consultado para evitar encerrar uma movimentação diferente da exibida.
 
-`ParkingSlot.ocupacao` é uma estrutura de apresentação futura. A saída permanece
-desabilitada. Campos extras na API não alteram automaticamente os detalhes do mapa.
+O HTTP `200` confirma a saída. A resposta completa inclui o registro encerrado,
+veículo, vaga e horário de saída; respostas incompletas não geram detalhes inventados.
+O sucesso refaz cadastro e ocupação, liberando a vaga, atualizando indicadores e
+devolvendo o veículo à seleção após confirmação pela consulta. Não há atualização
+otimista que suponha a vaga livre antes da resposta.
+
+Conflitos `409` e registros inexistentes `404` são apresentados sem detalhes internos.
+Falhas de conexão, timeout e `500` deixam a operação com confirmação incerta e
+provocam nova consulta, sem repetir o POST automaticamente. A última confirmação
+permanece se essa consulta falhar. Navegar durante o envio não cancela a operação.
+
+O controller de status utiliza `listarComStatus()` para consultar as ocupações.
+A saída exige `registroId` numérico, inteiro e positivo; corpo ausente e IDs em texto,
+booleanos ou listas retornam `400`. Erros de negócio passam pelo tratamento comum
+da API: registro inexistente retorna `404` e registro já encerrado retorna `409`,
+sempre em JSON.
 
 ## Registro de entrada
 
 Selecionar uma vaga cadastrada com status livre confirmado apresenta o formulário
 no painel de detalhes. Os veículos são carregados sob demanda e compartilhados
 com o Dashboard. Há estados de carregamento, erro, lista vazia e atualização da
-lista. O veículo é obrigatório; o frontend não filtra veículos estacionados sem
-uma consulta que forneça essa informação. Um conflito retornado pelo backend é
-apresentado na interface.
+lista. O veículo é obrigatório. A seleção exclui todos os veículos com registro
+ativo na consulta, inclusive em vagas cadastradas fora das 27 posições físicas.
+Todos os cadastros precisam ter status correspondente; ocupantes incompletos ou
+inconsistentes bloqueiam a seleção até uma nova consulta. Respostas antigas com
+apenas o booleano continuam exibindo disponibilidade, mas não habilitam a seleção.
+A interface diferencia ausência de cadastros de todos os veículos já estacionados.
+Uma seleção que deixa de estar disponível é limpa e revalidada antes do envio.
 
 O envio captura o veículo e a vaga selecionados e bloqueia uma segunda entrada
-enquanto a operação está pendente. A requisição pertence ao service da sessão:
+enquanto qualquer movimentação está pendente. A requisição pertence ao service da sessão:
 trocar de vaga ou navegar para o Dashboard não cancela o envio nem troca seu destino.
 Não há repetição automática do POST. Falhas de conexão ou timeout não são tratadas
 como certeza de que nada foi gravado; a interface informa que a confirmação está
@@ -117,16 +143,25 @@ reenviar a operação.
 O backend ainda precisa garantir exclusividade em requisições simultâneas de
 outros clientes. O bloqueio local de envio duplicado não resolve essa pendência.
 
-## Verificação existente
+## Verificação
 
 O fluxo de entrada foi conferido no Edge em desktop (1440 px) e celular (390 px),
 com as rotas reais e PostgreSQL em banco temporário. Foram validados gravação,
 confirmação, mapa, indicadores, conflito e recuperação de falha na atualização.
 O banco temporário foi removido e os cadastros locais de demonstração preservados.
 
+Os fluxos de ocupante, saída e filtro de veículos também foram conferidos no Edge
+em desktop (1440 px) e celular (390 px), com as rotas reais da API e PostgreSQL em
+banco temporário. Foram validados confirmação, cancelamento, saída persistida,
+reentrada, retorno do veículo à seleção, exclusão de veículos em vagas fora do
+mapa e indicadores, sem rolagem horizontal da página. O banco temporário foi
+removido e os cadastros locais de demonstração preservados. Os testes com respostas
+controladas cobrem conflitos e recuperação após falha de consulta.
+
 Os testes cobrem navegação e reaproveitamento de consultas, falhas independentes,
 recuperação, busca, distinção entre número e ID, interpretação de `true`/`false`,
-indicadores, respostas inválidas ou parciais, envio de entrada com IDs, bloqueio de
-duplicidade, confirmação, falhas e navegação durante o envio. Fixtures ficam
+indicadores, respostas inválidas ou parciais, envio de entrada e saída com IDs,
+detalhes do ocupante, confirmação e cancelamento, veículos fora do mapa, bloqueio de
+duplicidade, mudança de registro, falhas e navegação durante os envios. Fixtures ficam
 restritas aos testes. Não há dados mockados na aplicação.
 Consulte os comandos de build e testes no README principal.

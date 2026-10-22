@@ -4,24 +4,26 @@ import { RegistrosService } from '../../../core/services/registros.service';
 import { Icon } from '../../../shared/icon/icon';
 
 @Component({
-  selector: 'app-entry-feedback',
+  selector: 'app-movement-feedback',
   imports: [DatePipe, Icon],
   template: `
-    @if (registros.entradaPendente(); as pendente) {
+    @if (registros.movimentacaoPendente(); as pendente) {
       <div class="notice entry-feedback" role="status">
         <app-icon name="car" />
         <p>
-          Registrando a entrada de <strong>{{ pendente.carro.placa }}</strong> na vaga
+          Registrando a {{ pendente.operacao === 'entrada' ? 'entrada' : 'saída' }} de
+          <strong>{{ pendente.carro.placa }}</strong> na vaga
           {{ pendente.vaga.numero.toString().padStart(2, '0') }}…
         </p>
       </div>
     }
-    @if (registros.resultadoEntrada(); as resultado) {
+    @if (registros.resultado(); as resultado) {
       <section
         #feedback
         class="notice entry-feedback"
         [class.entry-success]="resultado.tipo === 'success'"
         [class.entry-warning]="resultado.tipo !== 'success'"
+        [class.exit-feedback]="resultado.operacao === 'saida'"
         [attr.role]="resultado.tipo === 'success' ? 'status' : 'alert'"
       >
         <app-icon [name]="resultado.tipo === 'success' ? 'check' : 'warning'" />
@@ -29,10 +31,16 @@ import { Icon } from '../../../shared/icon/icon';
           <h2>
             {{
               resultado.tipo === 'success'
-                ? 'Última entrada registrada'
+                ? resultado.operacao === 'entrada'
+                  ? 'Última entrada registrada'
+                  : 'Última saída registrada'
                 : resultado.tipo === 'error'
-                  ? 'Entrada não registrada'
-                  : 'Não foi possível confirmar a entrada'
+                  ? resultado.operacao === 'entrada'
+                    ? 'Entrada não registrada'
+                    : 'Saída não registrada'
+                  : resultado.operacao === 'entrada'
+                    ? 'Não foi possível confirmar a entrada'
+                    : 'Não foi possível confirmar a saída'
             }}
           </h2>
           <p>{{ resultado.mensagem }}</p>
@@ -62,6 +70,12 @@ import { Icon } from '../../../shared/icon/icon';
                 <dt>Entrada</dt>
                 <dd>{{ registro.entrada | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
               </div>
+              @if (resultado.operacao === 'saida' && registro.saida) {
+                <div>
+                  <dt>Saída</dt>
+                  <dd>{{ registro.saida | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+                </div>
+              }
             </dl>
           } @else {
             <p>
@@ -73,7 +87,7 @@ import { Icon } from '../../../shared/icon/icon';
         <button
           class="icon-button"
           type="button"
-          aria-label="Dispensar mensagem da entrada"
+          aria-label="Dispensar mensagem da movimentação"
           (click)="registros.limparResultado()"
         >
           <app-icon name="close" />
@@ -121,14 +135,14 @@ import { Icon } from '../../../shared/icon/icon';
     }
   `,
 })
-export class EntryFeedback {
+export class MovementFeedback {
   protected readonly registros = inject(RegistrosService);
   private readonly feedback = viewChild<ElementRef<HTMLElement>>('feedback');
 
   constructor() {
     afterRenderEffect({
       mixedReadWrite: () => {
-        this.registros.resultadoEntrada();
+        this.registros.resultado();
         this.feedback()?.nativeElement.scrollIntoView?.({ block: 'nearest' });
       },
     });

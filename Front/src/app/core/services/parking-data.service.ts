@@ -1,5 +1,6 @@
 import { computed, DestroyRef, inject, Injectable } from '@angular/core';
 import { Carro, Vaga, VagaComDisponibilidade, VagaStatus } from '../models/parking';
+import { isCarro, isRegistroAtivo } from '../models/parking-validation';
 import { PARKING_ROWS } from '../parking-layout';
 import { CarrosService } from './carros.service';
 import { ListResource } from './list-resource';
@@ -9,18 +10,6 @@ function isVaga(value: unknown): value is Vaga {
   if (!value || typeof value !== 'object') return false;
   const vaga = value as Vaga;
   return Number.isInteger(vaga.id) && vaga.id > 0 && Number.isInteger(vaga.numero);
-}
-
-function isCarro(value: unknown): value is Carro {
-  if (!value || typeof value !== 'object') return false;
-  const carro = value as Carro;
-  return (
-    Number.isInteger(carro.id) &&
-    carro.id > 0 &&
-    typeof carro.placa === 'string' &&
-    typeof carro.modelo === 'string' &&
-    typeof carro.cor === 'string'
-  );
 }
 
 function isVagaStatus(value: unknown): value is VagaStatus {
@@ -51,12 +40,64 @@ export class ParkingDataService {
     );
     return this.vagas.items().map((vaga) => {
       const status = statuses.get(vaga.id);
+      const registro =
+        status?.numero === vaga.numero &&
+        status.status &&
+        isRegistroAtivo(status.registroAtivo, vaga)
+          ? status.registroAtivo
+          : null;
       return {
         ...vaga,
         disponibilidade:
           status?.numero === vaga.numero ? (status.status ? 'ocupada' : 'livre') : 'desconhecida',
+        ocupacao: registro
+          ? {
+              registroId: registro.id,
+              veiculo: registro.carro,
+              entrada: registro.entrada,
+            }
+          : undefined,
       };
     });
+  });
+  // A seleção precisa conhecer também os ocupantes de cadastros fora do mapa físico.
+  readonly ocupacaoCompleta = computed(() => {
+    if (this.vagas.status() !== 'success' || this.ocupacao.status() !== 'success') return false;
+    const statuses = this.ocupacao.items();
+    if (new Set(statuses.map((vaga) => vaga.id)).size !== statuses.length) return false;
+    if (
+      !this.vagas
+        .items()
+        .every((vaga) =>
+          statuses.some((item) => item.id === vaga.id && item.numero === vaga.numero),
+        )
+    )
+      return false;
+    const carros = new Set<number>();
+    const registros = new Set<number>();
+    return statuses.every((vaga) => {
+      if (!vaga.status) return vaga.registroAtivo === null;
+      const registro = vaga.registroAtivo;
+      if (
+        !isRegistroAtivo(registro, vaga) ||
+        carros.has(registro.carroId) ||
+        registros.has(registro.id)
+      )
+        return false;
+      carros.add(registro.carroId);
+      registros.add(registro.id);
+      return true;
+    });
+  });
+  readonly carrosDisponiveis = computed<Carro[]>(() => {
+    if (!this.ocupacaoCompleta() || this.carros.status() !== 'success') return [];
+    const estacionados = new Set(
+      this.ocupacao
+        .items()
+        .filter((vaga) => vaga.status)
+        .map((vaga) => vaga.registroAtivo!.carroId),
+    );
+    return this.carros.items().filter((carro) => !estacionados.has(carro.id));
   });
   readonly occupancySummary = computed(() => {
     const vagas = this.vagasComDisponibilidade().filter((vaga) => physicalNumbers.has(vaga.numero));
@@ -88,7 +129,7 @@ export class ParkingDataService {
   }
 
   refreshParking() {
-    // Uma entrada pode terminar enquanto uma consulta anterior ainda está em andamento.
+    // Uma movimentação pode terminar enquanto uma consulta anterior ainda está em andamento.
     this.vagas.reload();
     this.ocupacao.reload();
   }

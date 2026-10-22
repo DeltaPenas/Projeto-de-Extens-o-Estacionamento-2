@@ -4,9 +4,11 @@ Projeto de extensão universitária desenvolvido para auxiliar na organização 
 
 ## Estado atual
 
-O frontend oferece Dashboard com indicadores de ocupação, consulta e busca local de veículos, mapa SVG interativo com vagas livres e ocupadas, painel de detalhes e formulário de entrada com seleção de veículo cadastrado. A associação usa `vaga.numero`; o ID do banco permanece separado.
+O frontend oferece Dashboard com indicadores de ocupação, consulta e busca local de veículos, mapa SVG interativo e painel com veículo, horário de entrada e registro ativo da vaga ocupada. O formulário de entrada oferece somente veículos disponíveis. A saída é solicitada pelo painel, com confirmação e envio automático do ID do registro. A associação usa `vaga.numero`; o ID do banco permanece separado.
 
-A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. **O registro de entrada está integrado**: o sucesso apresenta a confirmação e refaz as consultas do mapa e dos indicadores. A saída permanece desabilitada. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
+A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre; `registroAtivo` identifica a movimentação aberta e o veículo, ou é `null` quando livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. Entradas e saídas apresentam confirmação e refazem as consultas do mapa e dos indicadores. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
+
+Os fluxos de ocupante, entrada e saída foram verificados no navegador com as rotas reais e PostgreSQL em banco temporário. A consulta de status utiliza `listarComStatus()` e os erros de negócio da saída são tratados em JSON, com validação estrita do ID recebido. Os cadastros locais de demonstração foram preservados.
 
 ## Tecnologias e pré-requisitos
 
@@ -156,32 +158,34 @@ npm run build
 npm test -- --watch=false
 ```
 
-Saída do build: `Front/dist/estacionamento/`. Os testes cobrem navegação, consulta compartilhada, busca de veículos, associação entre número e ID, cores do mapa, indicadores, atualização, falhas independentes e respostas de ocupação inválidas ou incompletas. Fixtures ficam restritas aos testes.
+Saída do build: `Front/dist/estacionamento/`. Os testes cobrem navegação, consulta compartilhada, busca de veículos, associação entre número e ID, cores do mapa, indicadores, entrada, detalhes do ocupante, confirmação e saída pelo registro ativo, filtro de veículos disponíveis, atualização e tratamento de falhas. Fixtures ficam restritas aos testes.
 
-Em `Back/`, **`npm test` é um placeholder e encerra com erro**; ainda não existe suíte de testes. Não há scripts de build ou start de produção no backend.
+Em `Back/`, execute `npm test` para rodar os 15 testes de regressão dos controllers de status e saída. Eles verificam o contrato, IDs inválidos e erros `400`, `404`, `409` e `500`, substituindo os services durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
+
+A verificação de tipos com `npx tsc --noEmit` ainda aponta uma dependência ausente (`@prisma/orm-postgres/runtime`) no artefato antigo `src/prisma/db.ts`. Esse arquivo de Prisma Next não é utilizado pelas rotas atuais, que usam Prisma Client 6; a pendência não impede a execução da API nem dos testes de controllers.
 
 ## Integração e principais rotas
 
-O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros` e `POST /registros/entrada`.
+O Angular centraliza o HTTP em `Front/src/app/core/services/`, com URLs relativas e sem prefixo `/api`. O proxy de `angular.json` encaminha `/vagas`, `/vagas/**`, `/carros`, `/carros/**` e `/registros/**` para `http://127.0.0.1:3000`, preservando caminhos. A interface chama `GET /vagas`, `GET /vagas/status`, `GET /carros`, `POST /registros/entrada` e `POST /registros/saida`.
 
 | Rotas existentes                                        | Situação                                                              |
 | ------------------------------------------------------- | --------------------------------------------------------------------- |
 | `GET /vagas`, `GET /vagas/:id`                          | ID e número; sem ocupação                                             |
-| `GET /vagas/status`                                     | ID, número e status booleano; integrado ao mapa e aos indicadores     |
+| `GET /vagas/status`                                     | ID, número, status e registro ativo com veículo; integrado ao mapa e aos indicadores |
 | `POST /vagas`, `PUT /vagas/:id`, `DELETE /vagas/:id`    | Cadastro, alteração e exclusão implementados no código                |
 | `GET /carros`, `GET /carros/:id`                        | Consulta de veículos                                                  |
 | `POST /carros`, `PUT /carros/:id`, `DELETE /carros/:id` | Cadastro, alteração e exclusão implementados no código                |
 | `POST /registros/entrada`                               | Integrado com `{ carroid, vagaid }`; concorrência pendente no backend |
-| `POST /registros/saida`                                 | Recebe placa; não integrado ao frontend                               |
+| `POST /registros/saida`                                 | Integrado com `{ registroId }` inteiro e positivo; erros de negócio em JSON |
 
 O proxy só funciona no desenvolvimento. Em produção, encaminhe as rotas à API na mesma origem ou configure outra origem com CORS. Não há autenticação ou configuração de CORS na API atual.
 
 ## Limitações e próximas entregas
 
-- A consulta de ocupação não informa o veículo estacionado nem o horário de entrada; esses detalhes dependem de um contrato de consulta no backend.
+- Os detalhes do ocupante e a saída exigem um registro ativo válido e correspondente à vaga. Dados ausentes ou inconsistentes desabilitam a saída. Para filtrar os veículos de entrada, a consulta deve cobrir todos os cadastros, inclusive vagas fora do mapa; informações incompletas bloqueiam a seleção.
 - O backend permite reutilizar vagas após a saída, mas ainda precisa garantir uma entrada ativa por vaga e por veículo em requisições simultâneas. O bloqueio de envio duplicado no frontend se aplica somente à sessão atual.
-- A confirmação da última entrada mostra o registro, a vaga, o veículo e o horário retornados pela operação. Ela fica apenas na sessão e não substitui uma consulta do ocupante atual.
-- A saída e a página de cadastro de veículos continuam para entregas próprias.
+- A confirmação da última movimentação mostra registro, vaga, veículo e horários retornados pela operação. Ela fica apenas na sessão e não substitui a consulta do ocupante atual. Falhas na atualização preservam a confirmação, sem repetir o envio.
+- A página de cadastro de veículos continua para uma entrega própria.
 - Não há endpoint de histórico nem seed versionado dos cadastros.
 - Uma posição só aparece como “Não cadastrada” após consulta bem-sucedida sem registro correspondente. Falhas permanecem como cadastro não verificado.
 - O botão Atualizar refaz as consultas; não há atualização automática. O estado compartilhado mantém mapa e Dashboard coerentes ao navegar entre as páginas.
