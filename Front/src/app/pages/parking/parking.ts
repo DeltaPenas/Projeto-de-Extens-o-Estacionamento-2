@@ -1,11 +1,15 @@
 import { DatePipe, DOCUMENT } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { afterRenderEffect, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { PHYSICAL_CAPACITY } from '../../core/parking-layout';
 import { ParkingDataService } from '../../core/services/parking-data.service';
 import { RegistrosService } from '../../core/services/registros.service';
 import { EntryForm } from './entry-form/entry-form';
 import { MovementFeedback } from './movement-feedback/movement-feedback';
 import { ExitAction } from './exit-action/exit-action';
+import { ParkingHistory } from './parking-history/parking-history';
+import { ParkingHistoryService } from '../../core/services/parking-history.service';
 import { Icon } from '../../shared/icon/icon';
 import {
   associateSlots,
@@ -16,12 +20,15 @@ import {
 
 @Component({
   selector: 'app-parking',
-  imports: [Icon, ParkingMap, DatePipe, EntryForm, MovementFeedback, ExitAction],
+  imports: [Icon, ParkingMap, DatePipe, EntryForm, MovementFeedback, ExitAction, ParkingHistory],
   templateUrl: './parking.html',
   styleUrl: './parking.css',
 })
 export class Parking {
   private readonly document = inject(DOCUMENT);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly history = inject(ParkingHistoryService);
+  private readonly routeSelectionPending = signal(false);
   protected readonly data = inject(ParkingDataService);
   protected readonly registros = inject(RegistrosService);
   protected readonly capacity = PHYSICAL_CAPACITY;
@@ -41,6 +48,27 @@ export class Parking {
 
   constructor() {
     this.data.ensureParkingLoaded();
+    this.route?.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const raw = params.get('vaga');
+      const numero = raw && /^[1-9]\d*$/.test(raw) ? Number(raw) : null;
+      const valid = PARKING_POSITIONS.some((position) => position.numero === numero);
+      this.selectedNumber.set(valid ? numero : null);
+      this.routeSelectionPending.set(valid);
+    });
+    afterRenderEffect(() => {
+      if (!this.routeSelectionPending() || !this.selected()) return;
+      const title = this.document.getElementById('details-title');
+      if (title) {
+        title.focus({ preventScroll: true });
+        this.document.getElementById('slot-details')?.scrollIntoView?.({ block: 'nearest' });
+        this.routeSelectionPending.set(false);
+      }
+    });
+  }
+
+  protected refresh() {
+    this.data.refreshParking();
+    this.history.refresh();
   }
 
   protected selectSlot(numero: number) {

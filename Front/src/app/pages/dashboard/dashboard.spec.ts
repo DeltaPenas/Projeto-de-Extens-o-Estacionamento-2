@@ -21,6 +21,79 @@ describe('Dashboard', () => {
 
   afterEach(() => http.verify());
 
+  it('mostra ocupação e disponibilidade, filtra situação e cria atalho pelo número físico', () => {
+    const vaga = { id: 205, numero: 4 };
+    http.expectOne('/vagas').flush([vaga]);
+    http.expectOne('/vagas/status').flush([
+      {
+        ...vaga,
+        status: true,
+        registroAtivo: {
+          id: 56,
+          entrada: '2026-10-21T12:00:00Z',
+          saida: null,
+          carroId: 81,
+          vagaId: 205,
+          carro: car,
+        },
+      },
+    ]);
+    http
+      .expectOne('/carros')
+      .flush([car, { id: 82, placa: 'DEF4G56', modelo: 'Gol', cor: 'Azul' }]);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const rows = element.querySelectorAll('tbody tr');
+    expect(rows[0]?.textContent).toContain('Estacionado');
+    expect(rows[0]?.textContent).toContain('04');
+    expect(rows[0]?.textContent).toContain('21/10/2026');
+    expect(rows[1]?.textContent).toContain('Disponível');
+    expect(rows[0]?.querySelector('a')?.getAttribute('href')).toBe('/estacionamento?vaga=4');
+    const select = element.querySelector<HTMLSelectElement>('.status-filter select')!;
+    select.value = 'disponivel';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(element.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(element.querySelector('tbody')?.textContent).toContain('DEF4G56');
+  });
+
+  it('não apresenta disponibilidade nem atalho quando a ocupação não foi verificada', () => {
+    http.expectOne('/vagas').flush([{ id: 205, numero: 4 }]);
+    http.expectOne('/vagas/status').error(new ProgressEvent('error'));
+    http.expectOne('/carros').flush([car]);
+    fixture.detectChanges();
+    const row = (fixture.nativeElement as HTMLElement).querySelector('tbody tr')!;
+    expect(row.textContent).toContain('Não verificada');
+    expect(row.querySelector('a')).toBeNull();
+    expect(row.textContent).not.toContain('Disponível');
+  });
+
+  it('identifica veículo estacionado fora do mapa sem criar um atalho inválido', () => {
+    const vaga = { id: 999, numero: 200 };
+    http.expectOne('/vagas').flush([vaga]);
+    http.expectOne('/vagas/status').flush([
+      {
+        ...vaga,
+        status: true,
+        registroAtivo: {
+          id: 56,
+          entrada: '2026-10-21T12:00:00Z',
+          saida: null,
+          carroId: 81,
+          vagaId: 999,
+          carro: car,
+        },
+      },
+    ]);
+    http.expectOne('/carros').flush([car]);
+    fixture.detectChanges();
+    const row = (fixture.nativeElement as HTMLElement).querySelector('tbody tr')!;
+    expect(row.textContent).toContain('Estacionado');
+    expect(row.textContent).toContain('200');
+    expect(row.textContent).toContain('Fora do mapa');
+    expect(row.querySelector('a')).toBeNull();
+  });
+
   it('calcula a ocupação das vagas do mapa sem contar veículos ou cadastros fora dele', () => {
     const vagas = [
       { id: 101, numero: 1 },

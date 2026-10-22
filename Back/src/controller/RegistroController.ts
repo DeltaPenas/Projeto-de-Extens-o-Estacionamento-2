@@ -7,6 +7,13 @@ const registroService = new RegistroService();
 
 
 export class RegistroController{
+    async listar(req: Request, res: Response) {
+        try {
+            return res.status(200).json(await registroService.listarHistorico(req.query));
+        } catch (error) {
+            return responderErro(res, error);
+        }
+    }
      
 async ocupar(req: Request, res: Response) {
     try {

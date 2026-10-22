@@ -14,6 +14,7 @@ import {
 import { isCarro, isDate } from '../models/parking-validation';
 import { API_BASE_URL } from './api.config';
 import { ParkingDataService } from './parking-data.service';
+import { ParkingHistoryService } from './parking-history.service';
 
 type ContextoMovimentacao = {
   carro: Carro;
@@ -55,6 +56,7 @@ function isRegistro(
 export class RegistrosService {
   private readonly http = inject(HttpClient);
   private readonly data = inject(ParkingDataService);
+  private readonly historico = inject(ParkingHistoryService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly url = `${inject(API_BASE_URL)}/registros`;
   private readonly pendenteState = signal<ContextoMovimentacao | null>(null);
@@ -149,12 +151,14 @@ export class RegistrosService {
           if (response.status === statusEsperado) this.confirmar(contexto, response.body);
           else this.informarErro(contexto, null);
           this.data.refreshParking();
+          this.historico.refreshIfLoaded();
         },
         error: (error: unknown) => {
           if (error instanceof HttpErrorResponse && error.status === statusEsperado)
             this.confirmar(contexto, null);
           else this.informarErro(contexto, error);
           this.data.refreshParking();
+          this.historico.refreshIfLoaded();
         },
       });
   }

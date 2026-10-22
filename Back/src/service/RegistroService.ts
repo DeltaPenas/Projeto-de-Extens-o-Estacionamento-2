@@ -2,6 +2,7 @@ import {CarroRepository} from "../repository/CarroRepository";
 import {RegistroRepository} from "../repository/RegistroRepository";
 import {VagaRepository} from "../repository/VagaRepository";
 import { AppError } from "../errors/AppError";
+import { consultarHistorico } from "./consulta-historico";
 
 
 
@@ -10,6 +11,9 @@ const carroRepository = new CarroRepository();
 const vagaRepository = new VagaRepository();
 const registroRepository = new RegistroRepository();
 export class RegistroService{
+    listarHistorico(query: Record<string, unknown>) {
+        return registroRepository.listarHistorico(consultarHistorico(query));
+    }
     
     async ocuparVaga(carroId: number, vagaId: number) {
         const carro = await carroRepository.listarPorId(carroId);

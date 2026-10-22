@@ -1,0 +1,153 @@
+<section
+  class="panel"
+  aria-labelledby="history-title"
+  [attr.aria-busy]="historico.status() === 'loading'"
+>
+  <header class="panel-heading history-heading">
+    <div>
+      <h2 id="history-title">Histórico de movimentações</h2>
+      <p>Consulte entradas, saídas e o tempo de permanência dos veículos.</p>
+    </div>
+    <button
+      class="button"
+      type="button"
+      (click)="historico.refresh()"
+      [disabled]="historico.status() === 'loading' || registros.registrando()"
+    >
+      <app-icon name="refresh" />Atualizar histórico
+    </button>
+  </header>
+  <form class="history-filters" [formGroup]="filtros" (submit)="aplicar($event)">
+    <label
+      >Placa<input
+        type="search"
+        formControlName="placa"
+        placeholder="Buscar por placa"
+        maxlength="20"
+    /></label>
+    <label>Entrada a partir de<input type="date" formControlName="inicio" /></label>
+    <label>Entrada até<input type="date" formControlName="fim" /></label>
+    <label
+      >Situação<select formControlName="situacao">
+        <option value="">Todas</option>
+        <option value="abertos">Em andamento</option>
+        <option value="encerrados">Encerradas</option>
+      </select></label
+    >
+    <div class="filter-actions">
+      <button class="button button-primary" type="submit">Filtrar</button
+      ><button class="button" type="button" (click)="limpar()">Limpar</button>
+    </div>
+    <p class="filter-help">
+      O período considera a data de entrada, incluindo o dia final selecionado.
+    </p>
+    @if (erroFiltro()) {
+      <p class="filter-error" role="alert">{{ erroFiltro() }}</p>
+    }
+  </form>
+  @switch (historico.status()) {
+    @case ('success') {
+      @if (historico.pagina(); as pagina) {
+        @if (pagina.items.length) {
+          <div class="history-table" tabindex="0" role="region" aria-label="Lista de movimentações">
+            <table>
+              <caption class="visually-hidden">
+                Movimentações em ordem de entrada mais recente
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">VEÍCULO</th>
+                  <th scope="col">VAGA</th>
+                  <th scope="col">ENTRADA</th>
+                  <th scope="col">SAÍDA</th>
+                  <th scope="col">PERMANÊNCIA</th>
+                  <th scope="col">SITUAÇÃO</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (registro of pagina.items; track registro.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ registro.carro.placa }}</strong
+                      ><small>{{ registro.carro.modelo }} · {{ registro.carro.cor }}</small
+                      ><small>Registro #{{ registro.id }}</small>
+                    </td>
+                    <td>{{ registro.vaga.numero.toString().padStart(2, '0') }}</td>
+                    <td>{{ registro.entrada | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>
+                      {{ registro.saida ? (registro.saida | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}
+                    </td>
+                    <td>{{ permanencia(registro) }}</td>
+                    <td>
+                      <span class="badge" [class.history-open]="registro.saida === null">{{
+                        registro.saida === null ? 'Em andamento' : 'Encerrada'
+                      }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-state" role="status">
+            <app-icon name="clock" />
+            <h3>Nenhuma movimentação encontrada</h3>
+            <p>
+              As movimentações aparecerão aqui após uma entrada. Confira também os filtros
+              aplicados.
+            </p>
+          </div>
+        }
+        <footer class="history-footer">
+          <div role="status">
+            {{ pagina.total }}
+            {{ pagina.total === 1 ? 'movimentação encontrada' : 'movimentações encontradas'
+            }}<small>Consulta às {{ historico.updatedAt() | date: 'HH:mm' }}</small>
+          </div>
+          <label
+            >Por página<select
+              [value]="pagina.limit"
+              (change)="trocarLimite($any($event.target).value)"
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select></label
+          >
+          <nav aria-label="Páginas do histórico">
+            <button
+              class="button"
+              type="button"
+              [disabled]="pagina.page <= 1"
+              (click)="trocarPagina(pagina.page - 1)"
+            >
+              Anterior</button
+            ><span>Página {{ pagina.page }} de {{ pagina.totalPages || 1 }}</span
+            ><button
+              class="button"
+              type="button"
+              [disabled]="pagina.page >= pagina.totalPages"
+              (click)="trocarPagina(pagina.page + 1)"
+            >
+              Próxima
+            </button>
+          </nav>
+        </footer>
+      }
+    }
+    @case ('error') {
+      <div class="empty-state error-state" role="alert">
+        <app-icon name="warning" />
+        <h3>Não foi possível carregar o histórico</h3>
+        <p>Confira a conexão e tente novamente. O mapa continua disponível para consulta.</p>
+        <button class="button" type="button" (click)="historico.load()">Tentar novamente</button>
+      </div>
+    }
+    @default {
+      <div class="loading-state" role="status">
+        <span class="spinner"></span>
+        <p>Carregando movimentações…</p>
+      </div>
+    }
+  }
+</section>

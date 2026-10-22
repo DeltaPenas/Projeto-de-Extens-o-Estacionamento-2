@@ -14,7 +14,7 @@ src/app/
     services/                      # HTTP e estado compartilhado das consultas
   pages/
     dashboard/                     # Indicadores e veículos cadastrados
-    parking/                       # Mapa, ocupante, entrada, confirmação e saída
+    parking/                       # Mapa, ocupante, entrada, saída e histórico
   shared/
     icon/                          # Ícones SVG sem dependência externa
     metric-card/                   # Cards reutilizáveis
@@ -44,6 +44,22 @@ src/app/
 - O mesmo service envia `POST /registros/saida`, com `{ registroId: number }`,
   obtido automaticamente da vaga selecionada. Entradas e saídas compartilham o
   bloqueio de envio durante uma movimentação pendente.
+- `ParkingHistoryService`: consulta `GET /registros`, valida itens e metadados de
+  paginação e mantém os filtros aplicados na sessão. Consultas substituídas são
+  canceladas; falhas têm tratamento independente das consultas do mapa.
+
+## Situação dos veículos no Dashboard
+
+A lista mostra veículo, situação, vaga e horário de entrada. A busca por placa,
+modelo ou cor pode ser combinada com os filtros Estacionados, Disponíveis e Não
+verificada. A situação só é confirmada quando a consulta de ocupação está completa
+e consistente; falhas ou informações incompletas não apresentam veículos como disponíveis.
+
+O atalho Ver no mapa abre `/estacionamento?vaga=4`, utilizando o número físico,
+e seleciona a vaga correspondente. O endereço também funciona em acesso direto.
+A seleção por URL leva o foco aos detalhes; valores inválidos não selecionam uma
+posição. Veículos em vagas fora das 27 posições continuam identificados como
+estacionados, com seu número e a indicação Fora do mapa, sem atalho inválido.
 
 ## Convenção física e disponibilidade
 
@@ -75,7 +91,8 @@ confirmados ainda são exibidos no mapa quando a resposta é válida e parcial.
 Com cadastro e ocupação vazios, os totais são zero e a taxa fica indisponível,
 evitando divisão por zero.
 
-O botão Atualizar refaz cadastro e ocupação; no Dashboard, também refaz veículos.
+O botão Atualizar refaz cadastro e ocupação; no Dashboard, também refaz veículos e,
+no Estacionamento, também consulta novamente o histórico.
 Durante a consulta, a interface deixa de apresentar os status anteriores como
 atuais. Falhas de ocupação têm opção de repetir apenas essa consulta, preservando
 cadastros e veículos. A atualização feita em uma página é refletida na outra ao
@@ -143,6 +160,26 @@ reenviar a operação.
 O backend ainda precisa garantir exclusividade em requisições simultâneas de
 outros clientes. O bloqueio local de envio duplicado não resolve essa pendência.
 
+## Histórico abaixo do mapa
+
+A seção ocupa a largura da página abaixo do conjunto mapa e detalhes. Exibe veículo,
+vaga, entrada, saída, situação e permanência de movimentações encerradas. Movimentações
+abertas mostram Em andamento, sem estimar horário de saída. A ordem é da entrada
+mais recente para a mais antiga, com desempate pelo ID do registro.
+
+Os filtros por placa parcial, período de entrada e situação são aplicados pelo
+servidor, com paginação de 10, 20 ou 50 itens. O último dia selecionado é incluído
+por inteiro no fuso do navegador. Um período invertido não envia a consulta.
+Editar um campo não muda os filtros aplicados até clicar em Filtrar; Limpar
+remove os filtros e volta à primeira página.
+
+Filtros e resultados são compartilhados na sessão e reaproveitados ao navegar.
+Após a resposta de entrada ou saída, o histórico já consultado volta à primeira
+página com os filtros aplicados. Leituras anteriores são canceladas, evitando
+que uma resposta antiga substitua o resultado da atualização. Falhas e respostas
+incoerentes mostram erro com opção de repetir a consulta e preservam a confirmação
+da movimentação. O contrato completo está no [README principal](../README.md#consulta-de-histórico).
+
 ## Verificação
 
 O fluxo de entrada foi conferido no Edge em desktop (1440 px) e celular (390 px),
@@ -158,10 +195,16 @@ mapa e indicadores, sem rolagem horizontal da página. O banco temporário foi
 removido e os cadastros locais de demonstração preservados. Os testes com respostas
 controladas cobrem conflitos e recuperação após falha de consulta.
 
+A situação no Dashboard, o atalho para a vaga e o histórico abaixo do mapa foram
+verificados no Edge nas mesmas larguras, usando as rotas reais e banco temporário.
+Foram conferidos filtros combinados de placa, data e situação, paginação, ordenação,
+permanência e atualização do histórico e do Dashboard após uma saída. O banco de
+teste foi removido; as operações de auditoria não utilizaram os cadastros locais.
+
 Os testes cobrem navegação e reaproveitamento de consultas, falhas independentes,
 recuperação, busca, distinção entre número e ID, interpretação de `true`/`false`,
 indicadores, respostas inválidas ou parciais, envio de entrada e saída com IDs,
 detalhes do ocupante, confirmação e cancelamento, veículos fora do mapa, bloqueio de
-duplicidade, mudança de registro, falhas e navegação durante os envios. Fixtures ficam
+duplicidade, mudança de registro, filtros e paginação do histórico, falhas e navegação durante os envios. Fixtures ficam
 restritas aos testes. Não há dados mockados na aplicação.
 Consulte os comandos de build e testes no README principal.

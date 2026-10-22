@@ -22,6 +22,32 @@ export interface Carro {
   cor: string;
 }
 
+export interface CarroComSituacao extends Carro {
+  situacao: 'estacionado' | 'disponivel' | 'nao-verificada';
+  ocupacao?: { vaga: Vaga; entrada: string; registroId: number };
+}
+
+export interface RegistroHistorico extends Omit<RegistroEntrada, 'saida'> {
+  saida: string | null;
+}
+
+export interface ConsultaHistorico {
+  page: number;
+  limit: number;
+  placa?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  situacao?: 'abertos' | 'encerrados';
+}
+
+export interface PaginaHistorico {
+  items: RegistroHistorico[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface RegistrarEntradaRequest {
   carroid: number;
   vagaid: number;

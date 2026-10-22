@@ -1,5 +1,11 @@
 import { computed, DestroyRef, inject, Injectable } from '@angular/core';
-import { Carro, Vaga, VagaComDisponibilidade, VagaStatus } from '../models/parking';
+import {
+  Carro,
+  CarroComSituacao,
+  Vaga,
+  VagaComDisponibilidade,
+  VagaStatus,
+} from '../models/parking';
 import { isCarro, isRegistroAtivo } from '../models/parking-validation';
 import { PARKING_ROWS } from '../parking-layout';
 import { CarrosService } from './carros.service';
@@ -98,6 +104,25 @@ export class ParkingDataService {
         .map((vaga) => vaga.registroAtivo!.carroId),
     );
     return this.carros.items().filter((carro) => !estacionados.has(carro.id));
+  });
+  readonly carrosComSituacao = computed<CarroComSituacao[]>(() => {
+    const completa = this.ocupacaoCompleta();
+    const ocupacoes = this.ocupacao.items().filter((vaga) => vaga.status);
+    return this.carros.items().map((carro) => {
+      if (!completa) return { ...carro, situacao: 'nao-verificada' };
+      const vaga = ocupacoes.find((vaga) => vaga.registroAtivo?.carroId === carro.id);
+      return vaga?.registroAtivo
+        ? {
+            ...carro,
+            situacao: 'estacionado',
+            ocupacao: {
+              vaga: { id: vaga.id, numero: vaga.numero },
+              entrada: vaga.registroAtivo.entrada,
+              registroId: vaga.registroAtivo.id,
+            },
+          }
+        : { ...carro, situacao: 'disponivel' };
+    });
   });
   readonly occupancySummary = computed(() => {
     const vagas = this.vagasComDisponibilidade().filter((vaga) => physicalNumbers.has(vaga.numero));

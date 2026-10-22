@@ -4,8 +4,34 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
+import { flushEmptyHistory } from './testing/history';
 
 describe('Navegação entre as duas páginas', () => {
+  it('abre a vaga física indicada pelo Dashboard, inclusive após acesso direto à URL', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/estacionamento?vaga=4');
+    const vaga = { id: 205, numero: 4 };
+    http.expectOne('/vagas').flush([vaga]);
+    http.expectOne('/vagas/status').flush([{ ...vaga, status: true }]);
+    flushEmptyHistory(http);
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('#slot-details h3')?.textContent).toContain(
+      '04',
+    );
+    expect(
+      harness.routeNativeElement?.querySelector('g[data-number="4"]')?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    await harness.navigateByUrl('/estacionamento?vaga=200');
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Selecione uma vaga');
+    http.expectNone('/vagas');
+    flushEmptyHistory(http);
+    http.verify();
+  });
   it('compartilha cadastro e ocupação e reflete no Dashboard a atualização feita no mapa', async () => {
     TestBed.configureTestingModule({
       providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
@@ -46,6 +72,7 @@ describe('Navegação entre as duas páginas', () => {
     http.expectNone('/carros');
     http.expectNone('/registros/entrada');
     http.expectNone('/registros/saida');
+    flushEmptyHistory(http);
     http.verify();
   });
 
@@ -108,6 +135,7 @@ describe('Navegação entre as duas páginas', () => {
       'Entrada registrada com sucesso',
     );
     http.expectNone('/registros/entrada');
+    flushEmptyHistory(http);
     http.verify();
   });
   it('conclui a saída ao navegar e substitui consultas anteriores para atualizar o Dashboard', async () => {
@@ -165,6 +193,7 @@ describe('Navegação entre as duas páginas', () => {
       'Saída registrada com sucesso',
     );
     http.expectNone('/registros/saida');
+    flushEmptyHistory(http);
     http.verify();
   });
 });

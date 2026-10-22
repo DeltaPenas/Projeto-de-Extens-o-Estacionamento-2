@@ -3,5 +3,6 @@
   "/vagas/**": { "target": "http://127.0.0.1:3000" },
   "/carros": { "target": "http://127.0.0.1:3000" },
   "/carros/**": { "target": "http://127.0.0.1:3000" },
+  "/registros": { "target": "http://127.0.0.1:3000" },
   "/registros/**": { "target": "http://127.0.0.1:3000" }
 }
