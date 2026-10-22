@@ -2,16 +2,20 @@
   <h3 id="entry-title">Registrar entrada</h3>
   @switch (data.carros.status()) {
     @case ('success') {
-      @if (data.carros.items().length) {
+      @if (!data.ocupacaoCompleta()) {
+        <p class="entry-message" role="status">
+          Atualize a ocupação para verificar quais veículos estão disponíveis para entrada.
+        </p>
+      } @else if (data.carrosDisponiveis().length) {
         <form
           class="entry-form"
           (submit)="submit($event)"
           novalidate
-          [attr.aria-busy]="registros.registrandoEntrada()"
+          [attr.aria-busy]="registros.registrando()"
         >
-          <fieldset [disabled]="registros.registrandoEntrada()">
+          <fieldset [disabled]="registros.registrando()">
             <legend class="visually-hidden">Entrada de veículo na vaga {{ vaga().numero }}</legend>
-            <label for="entry-car">Veículo cadastrado</label>
+            <label for="entry-car">Veículo disponível</label>
             <select
               id="entry-car"
               [formControl]="carroId"
@@ -20,7 +24,7 @@
               aria-describedby="entry-help entry-validation"
             >
               <option value="">Selecione um veículo</option>
-              @for (carro of data.carros.items(); track carro.id) {
+              @for (carro of data.carrosDisponiveis(); track carro.id) {
                 <option [value]="carro.id">
                   {{ carro.placa }} · {{ carro.modelo }} · {{ carro.cor }}
                 </option>
@@ -28,6 +32,7 @@
             </select>
             <p id="entry-help">
               Confirme a entrada do veículo na vaga {{ vaga().numero.toString().padStart(2, '0') }}.
+              Veículos já estacionados não aparecem nesta seleção.
             </p>
             <p id="entry-validation" class="field-error" role="status">
               @if (carroId.touched && carroId.invalid) {
@@ -37,7 +42,7 @@
             <button
               class="button button-primary"
               type="submit"
-              [disabled]="registros.registrandoEntrada()"
+              [disabled]="registros.registrando()"
             >
               <app-icon name="car" />{{
                 registros.registrandoEntrada() ? 'Registrando entrada…' : 'Confirmar entrada'
@@ -45,16 +50,20 @@
             </button>
           </fieldset>
         </form>
-      } @else {
+      } @else if (!data.carros.items().length) {
         <p class="entry-message" role="status">
           Nenhum veículo cadastrado. Cadastre um veículo antes de registrar uma entrada.
+        </p>
+      } @else {
+        <p class="entry-message" role="status">
+          Nenhum veículo disponível para entrada. Todos os veículos cadastrados estão estacionados.
         </p>
       }
       <button
         class="button refresh-cars"
         type="button"
         (click)="data.carros.load()"
-        [disabled]="registros.registrandoEntrada()"
+        [disabled]="registros.registrando()"
       >
         Atualizar veículos
       </button>

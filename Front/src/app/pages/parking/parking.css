@@ -226,7 +226,6 @@
 .future-actions .button {
   width: 100%;
   margin-bottom: 8px;
-  cursor: not-allowed;
 }
 .future-actions p {
   margin: 5px 0 0;
@@ -270,7 +269,8 @@
     align-self: start;
     margin-top: 15px;
   }
-  .future-actions {
+  .future-actions,
+  app-exit-action {
     grid-column: 1 / -1;
   }
 }

@@ -40,6 +40,7 @@ export function associateSlots(
     return {
       ...position,
       vaga,
+      ocupacao: vaga?.ocupacao,
       cadastroVerificado,
       disponibilidade:
         vaga?.disponibilidade ?? (cadastroVerificado ? 'nao-cadastrada' : 'desconhecida'),
