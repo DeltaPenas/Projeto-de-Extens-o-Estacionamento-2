@@ -1,253 +1,286 @@
-
 <div class="page">
   <div class="eyebrow">GESTÃO DE VEÍCULOS</div>
-
   <header class="page-heading">
     <div>
       <h1>Veículos</h1>
-      <p>Cadastre, consulte e gerencie os veículos do estacionamento SEAGRI.</p>
+      <p>Cadastre e consulte os veículos do estacionamento SEAGRI.</p>
     </div>
-
-    <span class="header-badge">
-      <span class="status-dot"></span>
-      Controle de veículos
-    </span>
+    <button
+      class="button"
+      type="button"
+      (click)="data.carros.reload()"
+      [disabled]="data.carros.status() === 'loading' || cadastro.cadastrando()"
+    >
+      <app-icon name="refresh" />Atualizar
+    </button>
   </header>
 
-  <div class="map-summary">
-    <span>
-      <span class="summary-icon">▤</span>
-      <strong>{{ veiculos.length }}</strong>
-      {{ veiculos.length === 1 ? 'veículo cadastrado' : 'veículos cadastrados' }}
-    </span>
-
-    <i></i>
-
-    <span>
-      <span class="neutral-dot"></span>
-      Cadastro de veículos
-    </span>
+  <div class="vehicles-summary" role="status">
+    <app-icon name="car" />
+    @if (data.carros.status() === 'success') {
+      <span
+        ><strong>{{ data.carros.items().length }}</strong>
+        {{ data.carros.items().length === 1 ? 'veículo cadastrado' : 'veículos cadastrados' }}</span
+      >
+    } @else if (data.carros.status() === 'error') {
+      <span>Cadastro de veículos não consultado</span>
+    } @else {
+      <span>Consultando veículos…</span>
+    }
   </div>
 
-  @if (mensagem) {
-    <div
-      class="notice"
-      [class.notice-success]="tipoMensagem === 'sucesso'"
-      [class.notice-error]="tipoMensagem === 'erro'"
-      [attr.role]="tipoMensagem === 'erro' ? 'alert' : 'status'"
-    >
-      <span class="notice-icon">
-        {{ tipoMensagem === 'sucesso' ? '✓' : '!' }}
-      </span>
-      <span>{{ mensagem }}</span>
-
-      <button
-        type="button"
-        class="notice-close"
-        aria-label="Fechar mensagem"
-        (click)="mensagem = ''"
-      >
-        ×
-      </button>
+  @if (cadastro.pendente(); as pendente) {
+    <div class="notice registration-feedback" role="status">
+      <app-icon name="car" />
+      <p>
+        Cadastrando o veículo <strong>{{ pendente.placa }}</strong
+        >…
+      </p>
     </div>
+  }
+  @if (cadastro.resultado(); as resultado) {
+    <section
+      #feedback
+      class="notice registration-feedback"
+      [class.registration-success]="resultado.tipo === 'success'"
+      [class.registration-warning]="resultado.tipo !== 'success'"
+      [attr.role]="resultado.tipo === 'success' ? 'status' : 'alert'"
+    >
+      <app-icon [name]="resultado.tipo === 'success' ? 'check' : 'warning'" />
+      <div class="feedback-content">
+        <h2>
+          {{
+            resultado.tipo === 'success'
+              ? 'Último veículo cadastrado'
+              : resultado.tipo === 'error'
+                ? 'Cadastro não realizado'
+                : 'Confirmação do cadastro pendente'
+          }}
+        </h2>
+        <p>{{ resultado.mensagem }}</p>
+        <p class="registration-details">
+          {{ resultado.dados.placa }} · {{ resultado.dados.modelo }} · {{ resultado.dados.cor }}
+          @if (resultado.carro; as carro) {
+            <span> · ID {{ carro.id }}</span>
+          }
+        </p>
+      </div>
+      <button
+        class="icon-button"
+        type="button"
+        aria-label="Fechar mensagem do cadastro"
+        (click)="cadastro.limparResultado()"
+      >
+        <app-icon name="close" />
+      </button>
+    </section>
   }
 
   <div class="vehicles-grid">
     <section class="panel form-panel" aria-labelledby="form-title">
-      <header class="panel-heading">
-        <div class="heading-icon">＋</div>
-
+      <header class="panel-heading form-heading">
+        <span class="heading-icon"><app-icon name="car" /></span>
         <div>
           <h2 id="form-title">Cadastrar veículo</h2>
           <p>Preencha os dados para adicionar um veículo.</p>
         </div>
       </header>
-
-      <form class="vehicle-form" (ngSubmit)="cadastrarVeiculo()">
-        <div class="field">
-          <label for="placa">Placa do veículo</label>
-          <input
-            id="placa"
-            name="placa"
-            type="text"
-            [(ngModel)]="placa"
-            placeholder="ABC1D23"
-            maxlength="7"
-            autocomplete="off"
-            aria-describedby="placa-help"
-            required
-          />
-          <small id="placa-help">Formato antigo ou padrão Mercosul.</small>
-        </div>
-
-        <div class="field">
-          <label for="modelo">Modelo do veículo</label>
-          <input
-            id="modelo"
-            name="modelo"
-            type="text"
-            [(ngModel)]="modelo"
-            placeholder="Ex.: Fiat Uno"
-            maxlength="80"
-            required
-          />
-        </div>
-
-        <div class="field">
-          <label for="cor">Cor do veículo</label>
-          <input
-            id="cor"
-            name="cor"
-            type="text"
-            [(ngModel)]="cor"
-            placeholder="Ex.: Branco"
-            maxlength="40"
-            required
-          />
-        </div>
-
-        <div class="form-actions">
-          <button class="button button-primary" type="submit">
-            <span>＋</span>
-            Cadastrar veículo
-          </button>
-
-          <button
-            class="button button-secondary"
-            type="button"
-            (click)="placa = ''; modelo = ''; cor = ''; mensagem = ''"
-          >
-            Limpar campos
-          </button>
-        </div>
-
+      <form
+        #formulario
+        class="vehicle-form"
+        [formGroup]="cadastro.formulario"
+        (ngSubmit)="cadastrarVeiculo()"
+        novalidate
+        [attr.aria-busy]="cadastro.cadastrando()"
+      >
+        <fieldset [disabled]="cadastro.cadastrando()">
+          <legend class="visually-hidden">Dados do veículo</legend>
+          <div class="field">
+            <label for="placa">Placa do veículo</label
+            ><input
+              id="placa"
+              formControlName="placa"
+              type="text"
+              placeholder="ABC1D23"
+              maxlength="10"
+              autocomplete="off"
+              required
+              [attr.aria-invalid]="invalido('placa') ? 'true' : null"
+              [attr.aria-describedby]="invalido('placa') ? 'placa-help placa-error' : 'placa-help'"
+            /><small id="placa-help">Formato antigo ou Mercosul: ABC1234 ou ABC1D23.</small>
+            @if (invalido('placa')) {
+              <p id="placa-error" class="field-error" role="alert">
+                Informe uma placa válida com 7 caracteres.
+              </p>
+            }
+          </div>
+          <div class="field">
+            <label for="modelo">Modelo do veículo</label
+            ><input
+              id="modelo"
+              formControlName="modelo"
+              type="text"
+              placeholder="Ex.: Fiat Uno"
+              maxlength="80"
+              required
+              [attr.aria-invalid]="invalido('modelo') ? 'true' : null"
+              [attr.aria-describedby]="invalido('modelo') ? 'modelo-error' : null"
+            />
+            @if (invalido('modelo')) {
+              <p id="modelo-error" class="field-error" role="alert">
+                Informe o modelo com até 80 caracteres.
+              </p>
+            }
+          </div>
+          <div class="field">
+            <label for="cor">Cor do veículo</label
+            ><input
+              id="cor"
+              formControlName="cor"
+              type="text"
+              placeholder="Ex.: Branco"
+              maxlength="40"
+              required
+              [attr.aria-invalid]="invalido('cor') ? 'true' : null"
+              [attr.aria-describedby]="invalido('cor') ? 'cor-error' : null"
+            />
+            @if (invalido('cor')) {
+              <p id="cor-error" class="field-error" role="alert">
+                Informe a cor com até 40 caracteres.
+              </p>
+            }
+          </div>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit" [disabled]="cadastro.cadastrando()">
+              <app-icon name="car" />{{
+                cadastro.cadastrando() ? 'Cadastrando…' : 'Cadastrar veículo'
+              }}</button
+            ><button
+              class="button"
+              type="button"
+              (click)="cadastro.limparFormulario()"
+              [disabled]="cadastro.cadastrando()"
+            >
+              Limpar campos
+            </button>
+          </div>
+        </fieldset>
         <div class="form-footnote">
-          <span>ⓘ</span>
-          <p>Os campos marcados são obrigatórios. A placa deve ser única.</p>
+          <app-icon name="info" />
+          <p>Todos os campos são obrigatórios. A placa deve ser única.</p>
         </div>
       </form>
     </section>
 
-    <section class="panel list-panel" aria-labelledby="list-title">
+    <section
+      class="panel list-panel"
+      aria-labelledby="list-title"
+      [attr.aria-busy]="data.carros.status() === 'loading'"
+    >
       <header class="panel-heading list-heading">
         <div>
           <h2 id="list-title">Veículos cadastrados</h2>
           <p>Consulte os registros e encontre um veículo.</p>
         </div>
-
-        <span class="count-badge">{{ veiculos.length }}</span>
+        @if (data.carros.status() === 'success') {
+          <span class="badge badge-blue">{{ data.carros.items().length }}</span>
+        }
       </header>
-
       <div class="search-area">
         <label for="pesquisa">Pesquisar veículo</label>
-
         <div class="search-box">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-
-          <input
+          <app-icon name="search" /><input
             id="pesquisa"
-            name="pesquisa"
             type="search"
-            [(ngModel)]="pesquisa"
-            placeholder="Buscar por placa, modelo ou cor..."
+            [value]="pesquisa()"
+            (input)="pesquisa.set($any($event.target).value)"
+            placeholder="Buscar por placa, modelo ou cor"
             autocomplete="off"
           />
-
-          @if (pesquisa) {
+          @if (pesquisa()) {
             <button
-              type="button"
               class="clear-search"
+              type="button"
               aria-label="Limpar pesquisa"
-              (click)="limparPesquisa()"
+              (click)="pesquisa.set('')"
             >
-              ×
+              <app-icon name="close" />
             </button>
           }
         </div>
-
-        <div class="search-caption">
-          {{ veiculosFiltrados.length }}
-          {{ veiculosFiltrados.length === 1 ? 'resultado encontrado' : 'resultados encontrados' }}
-        </div>
       </div>
-
-      @if (carregando) {
-        <div class="empty-state" role="status">
-          <div class="loading-spinner"></div>
-          <h3>Carregando veículos...</h3>
-          <p>Aguarde enquanto consultamos os registros.</p>
-        </div>
-      } @else if (veiculos.length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">▤</div>
-          <h3>Nenhum veículo cadastrado</h3>
-          <p>Os veículos adicionados pelo formulário aparecerão aqui.</p>
-        </div>
-      } @else if (veiculosFiltrados.length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">⌕</div>
-          <h3>Nenhum resultado encontrado</h3>
-          <p>Experimente pesquisar usando outra placa, modelo ou cor.</p>
-
-          <button
-            class="button button-secondary"
-            type="button"
-            (click)="limparPesquisa()"
-          >
-            Limpar pesquisa
-          </button>
-        </div>
-      } @else {
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>PLACA</th>
-                <th>MODELO</th>
-                <th>COR</th>
-                <th class="action-column">AÇÕES</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              @for (veiculo of veiculosFiltrados; track veiculo.id) {
-                <tr>
-                  <td>
-                    <span class="plate-badge">{{ veiculo.placa }}</span>
-                  </td>
-
-                  <td>
-                    <span class="vehicle-model">{{ veiculo.modelo }}</span>
-                  </td>
-
-                  <td>
-                    <span class="color-value">
-                      <span class="color-dot"></span>
-                      {{ veiculo.cor }}
-                    </span>
-                  </td>
-
-                  <td class="action-column">
-                    <button
-                      type="button"
-                      class="delete-button"
-                      [attr.aria-label]="'Excluir veículo ' + veiculo.placa"
-                      (click)="excluirVeiculo(veiculo.id)"
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+      @switch (data.carros.status()) {
+        @case ('success') {
+          @if (data.carros.items().length === 0) {
+            <div class="empty-state" role="status">
+              <app-icon name="car" />
+              <h3>Nenhum veículo cadastrado</h3>
+              <p>Cadastre o primeiro veículo pelo formulário.</p>
+            </div>
+          } @else if (veiculosFiltrados().length === 0) {
+            <div class="empty-state" role="status">
+              <app-icon name="search" />
+              <h3>Nenhum resultado encontrado</h3>
+              <p>Experimente pesquisar outra placa, modelo ou cor.</p>
+              <button class="button" type="button" (click)="pesquisa.set('')">
+                Limpar pesquisa
+              </button>
+            </div>
+          } @else {
+            <div
+              class="table-wrapper"
+              tabindex="0"
+              role="region"
+              aria-label="Lista de veículos cadastrados"
+            >
+              <table>
+                <caption class="visually-hidden">
+                  Placa, modelo e cor dos veículos cadastrados
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">PLACA</th>
+                    <th scope="col">MODELO</th>
+                    <th scope="col">COR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (veiculo of veiculosFiltrados(); track veiculo.id) {
+                    <tr>
+                      <td>
+                        <span class="plate-badge">{{ veiculo.placa }}</span>
+                      </td>
+                      <td>{{ veiculo.modelo }}</td>
+                      <td>{{ veiculo.cor }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          <footer class="list-footer" role="status">
+            <span
+              >{{ veiculosFiltrados().length }} de {{ data.carros.items().length }} veículos</span
+            ><span>Consulta às {{ data.carros.updatedAt() | date: 'HH:mm' }}</span>
+          </footer>
+        }
+        @case ('error') {
+          <div class="empty-state error-state" role="alert">
+            <app-icon name="warning" />
+            <h3>Não foi possível carregar os veículos</h3>
+            <p>Tente consultar novamente. O resultado do último cadastro permanece disponível.</p>
+            <button class="button" type="button" (click)="data.carros.reload()">
+              Tentar novamente
+            </button>
+          </div>
+        }
+        @default {
+          <div class="loading-state" role="status">
+            <span class="spinner"></span>
+            <p>Carregando veículos…</p>
+          </div>
+        }
       }
-
-      <footer class="list-footer">
-        <span class="neutral-dot"></span>
-        Dados do cadastro atual
-      </footer>
     </section>
   </div>
 </div>

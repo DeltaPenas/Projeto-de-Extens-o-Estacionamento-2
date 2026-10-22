@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Carro } from '../models/parking';
+import { CadastroCarroRequest, Carro } from '../models/parking';
 import { API_BASE_URL } from './api.config';
 
 @Injectable({ providedIn: 'root' })
@@ -14,5 +14,9 @@ export class CarrosService {
 
   buscarPorId(id: Carro['id']) {
     return this.http.get<Carro>(`${this.url}/${id}`);
+  }
+
+  criar(dados: CadastroCarroRequest) {
+    return this.http.post<unknown>(this.url, dados, { observe: 'response' });
   }
 }

@@ -1,6 +1,6 @@
 ﻿# Estacionamento SEAGRI — Frontend
 
-MVP Angular com Dashboard (`/`) e Estacionamento (`/estacionamento`).
+MVP Angular com Dashboard (`/`), Estacionamento (`/estacionamento`) e Veículos (`/veiculos`).
 Requisitos, instalação, execução, proxy e comandos de build/testes estão no
 [README principal](../README.md#instalação-e-execução-local).
 
@@ -15,6 +15,7 @@ src/app/
   pages/
     dashboard/                     # Indicadores e veículos cadastrados
     parking/                       # Mapa, ocupante, entrada, saída e histórico
+    veiculos/                      # Consulta e cadastro de veículos pela API
   shared/
     icon/                          # Ícones SVG sem dependência externa
     metric-card/                   # Cards reutilizáveis
@@ -25,7 +26,8 @@ src/app/
 ## Integração atual
 
 - `VagasService`: `GET /vagas` e `GET /vagas/status`, usados nas duas páginas.
-- `CarrosService`: `GET /carros`, para consulta e busca local no Dashboard e seleção no formulário de entrada.
+- `CarrosService`: `GET /carros`, compartilhado pelas três páginas, e `POST /carros`, para cadastro na página Veículos.
+- `CadastroVeiculoService`: mantém o formulário e o envio de cadastro durante a sessão, valida a confirmação e atualiza a lista compartilhada.
 - Os dois services também oferecem consulta por ID nas rotas existentes; selecionar
   uma vaga já carregada não provoca uma requisição adicional.
 - `API_BASE_URL`, em `core/services/api.config.ts`, permite configurar outra origem;
@@ -60,6 +62,35 @@ e seleciona a vaga correspondente. O endereço também funciona em acesso direto
 A seleção por URL leva o foco aos detalhes; valores inválidos não selecionam uma
 posição. Veículos em vagas fora das 27 posições continuam identificados como
 estacionados, com seu número e a indicação Fora do mapa, sem atalho inválido.
+
+## Consulta e cadastro de veículos
+
+A página `/veiculos` usa `ParkingDataService.carros`, sem lista local nem cadastros
+fictícios. Reaproveita a consulta já feita nas outras páginas e oferece atualização,
+pesquisa por placa/modelo/cor sem exigir acentos e estados distintos de carregamento,
+erro, lista vazia e busca sem resultados.
+
+O formulário envia `{ placa, modelo, cor }` a `POST /carros`. A placa é normalizada
+para maiúsculas, sem espaços ou hífens, e aceita os formatos de sete caracteres
+exemplificados por ABC1234 e ABC1D23. Modelo e cor são obrigatórios e têm suas
+extremidades aparadas, com os limites de 80 e 40 caracteres. A validação do frontend
+complementa as validações do servidor.
+
+O bloqueio de envio duplicado e o formulário pertencem a `CadastroVeiculoService`,
+com escopo da sessão. Navegar não cancela o cadastro e preserva um rascunho ainda
+não enviado. Um `201` confirma a operação e limpa o formulário. O ID exibido vem
+somente de uma resposta válida e correspondente aos dados enviados.
+
+Após a resposta, `carros.reload()` cancela leituras anteriores e refaz `GET /carros`.
+Veículos, Dashboard e seleção de entrada passam a consumir a mesma lista atualizada,
+sem F5. Não há inserção de IDs inventados na lista. Falha nessa leitura preserva a
+confirmação do cadastro e permite tentar novamente sem repetir o POST. Erros e falhas
+incertas mantêm os campos preenchidos e não exibem mensagens internas do banco.
+
+Os estilos da página reutilizam os estilos globais de painéis, botões, avisos e
+estados vazios, além dos ícones compartilhados, sem alterar os budgets de CSS.
+A exclusão que removia itens apenas da lista visual foi retirada; edição e exclusão
+reais ficam para entregas próprias.
 
 ## Convenção física e disponibilidade
 
@@ -181,6 +212,13 @@ incoerentes mostram erro com opção de repetir a consulta e preservam a confirm
 da movimentação. O contrato completo está no [README principal](../README.md#consulta-de-histórico).
 
 ## Verificação
+
+O cadastro de veículos foi validado no Edge em desktop (1440 px) e celular (390 px)
+com as rotas reais da API e PostgreSQL em banco temporário. Foram conferidos `201`,
+normalização dos campos, navegação durante o envio, atualização no Dashboard e na
+seleção de entrada sem recarregar, entrada/saída do novo veículo e persistência após
+recarregar a página. Placa duplicada retornou `400` no backend atual e foi apresentada
+com mensagem compreensível, preservando o formulário. O banco temporário foi removido.
 
 O fluxo de entrada foi conferido no Edge em desktop (1440 px) e celular (390 px),
 com as rotas reais e PostgreSQL em banco temporário. Foram validados gravação,
