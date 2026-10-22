@@ -172,6 +172,7 @@ export class RegistrosService {
             'Vaga não encontrada',
             'Carro já possui uma entrada ativa',
             'Vaga já está ocupada',
+            'O veículo ou a vaga foi removido. Atualize os cadastros antes de registrar a entrada',
           ]
         : ['Registro não encontrado', 'Este registro já foi encerrado'];
     const mensagem =

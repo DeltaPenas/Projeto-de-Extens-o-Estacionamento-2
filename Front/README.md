@@ -15,7 +15,7 @@ src/app/
   pages/
     dashboard/                     # Indicadores e veículos cadastrados
     parking/                       # Mapa, ocupante, entrada, saída e histórico
-    veiculos/                      # Consulta e cadastro de veículos pela API
+    veiculos/                      # Consulta, cadastro, edição e exclusão pela API
   shared/
     icon/                          # Ícones SVG sem dependência externa
     metric-card/                   # Cards reutilizáveis
@@ -26,8 +26,8 @@ src/app/
 ## Integração atual
 
 - `VagasService`: `GET /vagas` e `GET /vagas/status`, usados nas duas páginas.
-- `CarrosService`: `GET /carros`, compartilhado pelas três páginas, e `POST /carros`, para cadastro na página Veículos.
-- `CadastroVeiculoService`: mantém o formulário e o envio de cadastro durante a sessão, valida a confirmação e atualiza a lista compartilhada.
+- `CarrosService`: `GET /carros`, compartilhado pelas três páginas, `POST /carros`, `PUT /carros/:id` e `DELETE /carros/:id` na página Veículos.
+- `CadastroVeiculoService`: mantém o formulário, o contexto de edição, a confirmação de exclusão e os envios durante a sessão; valida as respostas e atualiza as consultas compartilhadas.
 - Os dois services também oferecem consulta por ID nas rotas existentes; selecionar
   uma vaga já carregada não provoca uma requisição adicional.
 - `API_BASE_URL`, em `core/services/api.config.ts`, permite configurar outra origem;
@@ -63,7 +63,7 @@ A seleção por URL leva o foco aos detalhes; valores inválidos não selecionam
 posição. Veículos em vagas fora das 27 posições continuam identificados como
 estacionados, com seu número e a indicação Fora do mapa, sem atalho inválido.
 
-## Consulta e cadastro de veículos
+## Consulta, cadastro, edição e exclusão de veículos
 
 A página `/veiculos` usa `ParkingDataService.carros`, sem lista local nem cadastros
 fictícios. Reaproveita a consulta já feita nas outras páginas e oferece atualização,
@@ -89,8 +89,31 @@ incertas mantêm os campos preenchidos e não exibem mensagens internas do banco
 
 Os estilos da página reutilizam os estilos globais de painéis, botões, avisos e
 estados vazios, além dos ícones compartilhados, sem alterar os budgets de CSS.
-A exclusão que removia itens apenas da lista visual foi retirada; edição e exclusão
-reais ficam para entregas próprias.
+A lista organiza os dados e as ações em blocos no celular, sem comprimir as colunas.
+
+Editar preenche o formulário com os dados do cadastro selecionado. Salvar envia
+`PUT /carros/:id` com placa, modelo e cor normalizados, preservando o ID. Cancelar
+edição não envia a operação e restaura o rascunho de novo cadastro anterior à edição.
+Sucesso `200` encerra a edição; rejeições preservam os campos para correção. Placa
+duplicada é conflito `409`; cadastro removido por outro operador retorna `404`.
+
+Excluir abre um diálogo nativo com placa, modelo e cor. O foco inicial é Cancelar;
+Cancelar ou Escape não enviam requisição. Confirmar envia `DELETE /carros/:id`
+uma única vez e aguarda `204`. Durante o envio, os botões ficam bloqueados. O backend
+devolve `409` com mensagens distintas para veículo estacionado ou com histórico,
+mesmo encerrado. A saída de um veículo não remove seu histórico nem libera sua
+exclusão. Uma segunda tentativa sobre um cadastro removido recebe `404`.
+
+Cadastro, edição e exclusão compartilham um bloqueio de envio por sessão. O ID e os
+dados da operação são capturados antes do envio; navegar não cancela a requisição
+nem troca seu destino. Falhas de rede ou timeout deixam confirmação incerta e
+provocam consultas, sem repetir a mutação. A confirmação persiste se a leitura falhar.
+
+Após edição ou exclusão, o service refaz veículos, vagas, ocupação e o histórico
+já carregado, cancelando leituras anteriores. As três páginas usam a lista atualizada
+sem F5; detalhes do ocupante e histórico também recebem os novos atributos do cadastro.
+O histórico mantém os vínculos e apresenta os dados atuais do veículo, sem cópia dos
+atributos anteriores à edição. Os filtros aplicados são preservados na atualização.
 
 ## Convenção física e disponibilidade
 
@@ -213,12 +236,22 @@ da movimentação. O contrato completo está no [README principal](../README.md#
 
 ## Verificação
 
+Edição e exclusão foram verificadas no Edge em desktop (1440 px) e celular (390 px),
+com as rotas reais e PostgreSQL em banco temporário. Foram conferidos `200`, `204`,
+placa duplicada, cancelamento e Escape, foco inicial, navegação durante a edição,
+atualização do Dashboard, ocupante, seleção e histórico sem F5, bloqueios de exclusão
+por ocupação e histórico, preservação das movimentações e persistência após recarregar.
+Também foram validadas duas exclusões simultâneas e uma entrada concorrente com
+exclusão, sem registros órfãos. O banco temporário foi removido e os dados locais
+de demonstração foram preservados.
+
 O cadastro de veículos foi validado no Edge em desktop (1440 px) e celular (390 px)
 com as rotas reais da API e PostgreSQL em banco temporário. Foram conferidos `201`,
 normalização dos campos, navegação durante o envio, atualização no Dashboard e na
 seleção de entrada sem recarregar, entrada/saída do novo veículo e persistência após
-recarregar a página. Placa duplicada retornou `400` no backend atual e foi apresentada
-com mensagem compreensível, preservando o formulário. O banco temporário foi removido.
+recarregar a página. A duplicidade de placa, antes respondida como `400`, agora
+retorna `409` no cadastro e na edição, com mensagem compreensível e preservação dos
+campos. O banco temporário foi removido.
 
 O fluxo de entrada foi conferido no Edge em desktop (1440 px) e celular (390 px),
 com as rotas reais e PostgreSQL em banco temporário. Foram validados gravação,

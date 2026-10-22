@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    
-  "test": "tsx --test tests/parking-controllers.test.ts tests/parking-history.test.ts",
-  "dev": "tsx watch src/server.ts"
+    "test": "tsx --test tests/parking-controllers.test.ts tests/parking-history.test.ts tests/vehicles.test.ts",
+    "dev": "tsx watch src/server.ts"
   },
   "keywords": [],
   "author": "",
