@@ -1,6 +1,9 @@
 :host {
   display: block;
 }
+.mobile-map {
+  display: none;
+}
 .map-scroll {
   overflow-x: auto;
   padding: 18px 12px 6px;
@@ -132,11 +135,96 @@
     margin-left: 0;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .map-scroll {
-    padding: 12px 8px;
+    display: none;
+  }
+  .mobile-map {
+    display: block;
+    padding: 16px;
+  }
+  .mobile-map-help {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .mobile-sector + .mobile-sector {
+    margin-top: 22px;
+  }
+  .mobile-sector header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .mobile-sector h3 {
+    margin: 0;
+    font-size: 13px;
+  }
+  .mobile-sector header > span {
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+  .mobile-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .mobile-slot {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 64px;
+    padding: 8px 2px;
+    border: 1px solid #cbd5e2;
+    border-radius: 9px;
+    background: #f0f3f7;
+    color: var(--text-secondary);
+    scroll-margin-block: 20px 100px;
+  }
+  .mobile-slot strong {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+  .mobile-slot span {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .mobile-slot--livre {
+    background: #e2f3e9;
+    border-color: #bfdfcc;
+    color: #24734a;
+  }
+  .mobile-slot--ocupada {
+    background: #fbe8e8;
+    border-color: #efc6c6;
+    color: #a62f37;
+  }
+  .mobile-slot--nao-cadastrada {
+    border-style: dashed;
+    background: #fafbfc;
+  }
+  .mobile-slot.selected {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .mobile-slot:active {
+    transform: scale(0.97);
+  }
+  .map-legend .legend-help {
+    display: none;
   }
   .map-legend {
+    gap: 10px 16px;
     padding: 16px;
+  }
+}
+@media (max-width: 380px) {
+  .mobile-slot-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

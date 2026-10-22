@@ -50,7 +50,7 @@
       @if (historico.pagina(); as pagina) {
         @if (pagina.items.length) {
           <div class="history-table" tabindex="0" role="region" aria-label="Lista de movimentações">
-            <table>
+            <table class="mobile-cards history-cards">
               <caption class="visually-hidden">
                 Movimentações em ordem de entrada mais recente
               </caption>
@@ -72,13 +72,17 @@
                       ><small>{{ registro.carro.modelo }} · {{ registro.carro.cor }}</small
                       ><small>Registro #{{ registro.id }}</small>
                     </td>
-                    <td>{{ registro.vaga.numero.toString().padStart(2, '0') }}</td>
-                    <td>{{ registro.entrada | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                    <td>
+                    <td data-label="Vaga">
+                      {{ registro.vaga.numero.toString().padStart(2, '0') }}
+                    </td>
+                    <td data-label="Entrada">
+                      {{ registro.entrada | date: 'dd/MM/yyyy HH:mm:ss' }}
+                    </td>
+                    <td data-label="Saída">
                       {{ registro.saida ? (registro.saida | date: 'dd/MM/yyyy HH:mm:ss') : '—' }}
                     </td>
-                    <td>{{ permanencia(registro) }}</td>
-                    <td>
+                    <td data-label="Permanência">{{ permanencia(registro) }}</td>
+                    <td data-label="Situação">
                       <span class="badge" [class.history-open]="registro.saida === null">{{
                         registro.saida === null ? 'Em andamento' : 'Encerrada'
                       }}</span>

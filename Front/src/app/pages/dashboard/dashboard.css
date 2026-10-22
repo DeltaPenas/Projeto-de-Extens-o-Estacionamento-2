@@ -229,6 +229,37 @@ tbody tr:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+@media (max-width: 900px) {
+  .metrics {
+    gap: 10px;
+  }
+  .table-scroll {
+    max-height: none;
+  }
+  .search-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  .search-field {
+    flex-basis: auto;
+    max-width: none;
+    padding-block: 0;
+  }
+  .status-filter {
+    justify-content: space-between;
+  }
+  .status-filter select {
+    flex: 1;
+  }
+  .occupancy-notice .button {
+    width: 100%;
+  }
+  .table-footer {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+}
 @media (max-width: 460px) {
   .metrics {
     gap: 10px;

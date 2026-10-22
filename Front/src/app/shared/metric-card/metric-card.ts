@@ -64,6 +64,36 @@ import { Icon, IconName } from '../icon/icon';
       color: #66758b;
       background: #f1f4f8;
     }
+    @media (max-width: 900px) {
+      .metric-card {
+        padding: 16px 12px;
+      }
+      .metric-top {
+        align-items: start;
+        gap: 6px;
+        font-size: 12px;
+      }
+      .metric-icon {
+        padding: 6px;
+        border-radius: 7px;
+      }
+      .metric-icon app-icon {
+        width: 16px;
+        height: 16px;
+      }
+      .metric-value {
+        font-size: 30px;
+        margin-block: 12px 8px;
+      }
+      .metric-unit {
+        margin-left: 4px;
+        font-size: 12px;
+      }
+      p {
+        font-size: 11px;
+        line-height: 1.5;
+      }
+    }
   `,
 })
 export class MetricCard {

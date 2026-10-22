@@ -8,6 +8,8 @@ O frontend oferece Dashboard com indicadores de ocupação, consulta e busca loc
 
 O Dashboard mostra a situação de cada veículo, sua vaga e horário de entrada, com filtros e atalho para abrir a vaga selecionada no mapa. A página Estacionamento também apresenta o histórico abaixo do mapa e dos detalhes, com placa, veículo, vaga, entrada, saída, permanência encerrada, situação e paginação. É possível filtrar por placa, período de entrada e movimentações abertas ou encerradas.
 
+Em telas de até 900 px, a navegação fica fixa na parte inferior e o estacionamento apresenta as mesmas 27 vagas em uma grade por setor, com botões para toque. A seleção abre os detalhes e permite registrar entrada ou saída. Dashboard, histórico e veículos usam cartões no lugar das tabelas largas. Em telas maiores, permanecem o menu lateral, a planta SVG e as tabelas.
+
 A página Veículos consulta `GET /carros`, cadastra por `POST /carros`, edita por `PUT /carros/:id` e exclui por `DELETE /carros/:id`. A edição preenche o formulário existente; a exclusão pede confirmação e respeita os bloqueios de veículos estacionados ou com histórico. As operações atualizam os dados compartilhados com o Dashboard e a seleção de entrada, sem recarregar o navegador. Há validação dos campos, bloqueio de envio duplicado, confirmação e recuperação de falhas. A listagem tem pesquisa local e estados de carregamento, erro e lista vazia.
 
 A ocupação é consultada em `GET /vagas/status`: `true` significa ocupada e `false`, livre; `registroAtivo` identifica a movimentação aberta e o veículo, ou é `null` quando livre. Os indicadores consideram somente vagas cadastradas que correspondem às posições físicas do mapa. Falhas ou status incompletos mantêm os indicadores indisponíveis e as vagas afetadas em cinza. Entradas e saídas apresentam confirmação e refazem as consultas do mapa e dos indicadores. Não há dados mockados na aplicação; os cadastros são consultados no banco configurado.
@@ -162,7 +164,7 @@ npm run build
 npm test -- --watch=false
 ```
 
-Saída do build: `Front/dist/estacionamento/`. Os 112 testes cobrem navegação entre as três páginas, cadastro, edição e exclusão de veículos, confirmação e cancelamento, atualização compartilhada sem F5, situação dos veículos e atalho para a vaga, cores do mapa, indicadores, entrada e saída, histórico com filtros e paginação, atualização e tratamento de falhas. Fixtures ficam restritas aos testes. O CSS da página Veículos reutiliza estilos globais e atende aos budgets existentes, sem aumentar os limites.
+Saída do build: `Front/dist/estacionamento/`. Os 113 testes cobrem navegação entre as três páginas, cadastro, edição e exclusão de veículos, confirmação e cancelamento, atualização compartilhada sem F5, situação dos veículos e atalho para a vaga, cores do mapa, seleção por toque e retorno de foco, indicadores, entrada e saída, histórico com filtros e paginação, atualização e tratamento de falhas. Fixtures ficam restritas aos testes. Os estilos responsivos reutilizam regras globais e atendem aos budgets existentes, sem aumentar os limites.
 
 Em `Back/`, execute `npm test` para rodar os 78 testes de regressão de status, saída, histórico e veículos. Eles verificam contratos, normalização, filtros, paginação, IDs inválidos, bloqueios de exclusão e erros `400`, `404`, `409` e `500`, substituindo services ou repositories durante o teste, sem consultar ou alterar o banco. Não há scripts de build ou start de produção no backend.
 

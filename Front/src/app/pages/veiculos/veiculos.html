@@ -244,7 +244,7 @@
               role="region"
               aria-label="Lista de veículos cadastrados"
             >
-              <table>
+              <table class="mobile-cards">
                 <caption class="visually-hidden">
                   Placa, modelo, cor e ações dos veículos cadastrados
                 </caption>
@@ -264,7 +264,7 @@
                       </td>
                       <td data-label="Modelo">{{ veiculo.modelo }}</td>
                       <td data-label="Cor">{{ veiculo.cor }}</td>
-                      <td>
+                      <td class="mobile-card-wide">
                         <div class="row-actions">
                           <button
                             class="button edit-button"
