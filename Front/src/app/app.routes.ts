@@ -12,5 +12,12 @@ export const routes: Routes = [
     title: 'Mapa | Estacionamento SEAGRI',
     loadComponent: () => import('./pages/parking/parking').then((m) => m.Parking),
   },
+  {
+    path: 'veiculos',
+    title: 'Veículos | Estacionamento SEAGRI',
+    loadComponent: () =>
+      import('./pages/veiculos/veiculos')
+        .then(componente => componente.Veiculos),
+  },
   { path: '**', redirectTo: '' },
 ];

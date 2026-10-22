@@ -1,0 +1,253 @@
+
+<div class="page">
+  <div class="eyebrow">GESTÃO DE VEÍCULOS</div>
+
+  <header class="page-heading">
+    <div>
+      <h1>Veículos</h1>
+      <p>Cadastre, consulte e gerencie os veículos do estacionamento SEAGRI.</p>
+    </div>
+
+    <span class="header-badge">
+      <span class="status-dot"></span>
+      Controle de veículos
+    </span>
+  </header>
+
+  <div class="map-summary">
+    <span>
+      <span class="summary-icon">▤</span>
+      <strong>{{ veiculos.length }}</strong>
+      {{ veiculos.length === 1 ? 'veículo cadastrado' : 'veículos cadastrados' }}
+    </span>
+
+    <i></i>
+
+    <span>
+      <span class="neutral-dot"></span>
+      Cadastro de veículos
+    </span>
+  </div>
+
+  @if (mensagem) {
+    <div
+      class="notice"
+      [class.notice-success]="tipoMensagem === 'sucesso'"
+      [class.notice-error]="tipoMensagem === 'erro'"
+      [attr.role]="tipoMensagem === 'erro' ? 'alert' : 'status'"
+    >
+      <span class="notice-icon">
+        {{ tipoMensagem === 'sucesso' ? '✓' : '!' }}
+      </span>
+      <span>{{ mensagem }}</span>
+
+      <button
+        type="button"
+        class="notice-close"
+        aria-label="Fechar mensagem"
+        (click)="mensagem = ''"
+      >
+        ×
+      </button>
+    </div>
+  }
+
+  <div class="vehicles-grid">
+    <section class="panel form-panel" aria-labelledby="form-title">
+      <header class="panel-heading">
+        <div class="heading-icon">＋</div>
+
+        <div>
+          <h2 id="form-title">Cadastrar veículo</h2>
+          <p>Preencha os dados para adicionar um veículo.</p>
+        </div>
+      </header>
+
+      <form class="vehicle-form" (ngSubmit)="cadastrarVeiculo()">
+        <div class="field">
+          <label for="placa">Placa do veículo</label>
+          <input
+            id="placa"
+            name="placa"
+            type="text"
+            [(ngModel)]="placa"
+            placeholder="ABC1D23"
+            maxlength="7"
+            autocomplete="off"
+            aria-describedby="placa-help"
+            required
+          />
+          <small id="placa-help">Formato antigo ou padrão Mercosul.</small>
+        </div>
+
+        <div class="field">
+          <label for="modelo">Modelo do veículo</label>
+          <input
+            id="modelo"
+            name="modelo"
+            type="text"
+            [(ngModel)]="modelo"
+            placeholder="Ex.: Fiat Uno"
+            maxlength="80"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="cor">Cor do veículo</label>
+          <input
+            id="cor"
+            name="cor"
+            type="text"
+            [(ngModel)]="cor"
+            placeholder="Ex.: Branco"
+            maxlength="40"
+            required
+          />
+        </div>
+
+        <div class="form-actions">
+          <button class="button button-primary" type="submit">
+            <span>＋</span>
+            Cadastrar veículo
+          </button>
+
+          <button
+            class="button button-secondary"
+            type="button"
+            (click)="placa = ''; modelo = ''; cor = ''; mensagem = ''"
+          >
+            Limpar campos
+          </button>
+        </div>
+
+        <div class="form-footnote">
+          <span>ⓘ</span>
+          <p>Os campos marcados são obrigatórios. A placa deve ser única.</p>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel list-panel" aria-labelledby="list-title">
+      <header class="panel-heading list-heading">
+        <div>
+          <h2 id="list-title">Veículos cadastrados</h2>
+          <p>Consulte os registros e encontre um veículo.</p>
+        </div>
+
+        <span class="count-badge">{{ veiculos.length }}</span>
+      </header>
+
+      <div class="search-area">
+        <label for="pesquisa">Pesquisar veículo</label>
+
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+
+          <input
+            id="pesquisa"
+            name="pesquisa"
+            type="search"
+            [(ngModel)]="pesquisa"
+            placeholder="Buscar por placa, modelo ou cor..."
+            autocomplete="off"
+          />
+
+          @if (pesquisa) {
+            <button
+              type="button"
+              class="clear-search"
+              aria-label="Limpar pesquisa"
+              (click)="limparPesquisa()"
+            >
+              ×
+            </button>
+          }
+        </div>
+
+        <div class="search-caption">
+          {{ veiculosFiltrados.length }}
+          {{ veiculosFiltrados.length === 1 ? 'resultado encontrado' : 'resultados encontrados' }}
+        </div>
+      </div>
+
+      @if (carregando) {
+        <div class="empty-state" role="status">
+          <div class="loading-spinner"></div>
+          <h3>Carregando veículos...</h3>
+          <p>Aguarde enquanto consultamos os registros.</p>
+        </div>
+      } @else if (veiculos.length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">▤</div>
+          <h3>Nenhum veículo cadastrado</h3>
+          <p>Os veículos adicionados pelo formulário aparecerão aqui.</p>
+        </div>
+      } @else if (veiculosFiltrados.length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">⌕</div>
+          <h3>Nenhum resultado encontrado</h3>
+          <p>Experimente pesquisar usando outra placa, modelo ou cor.</p>
+
+          <button
+            class="button button-secondary"
+            type="button"
+            (click)="limparPesquisa()"
+          >
+            Limpar pesquisa
+          </button>
+        </div>
+      } @else {
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>PLACA</th>
+                <th>MODELO</th>
+                <th>COR</th>
+                <th class="action-column">AÇÕES</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (veiculo of veiculosFiltrados; track veiculo.id) {
+                <tr>
+                  <td>
+                    <span class="plate-badge">{{ veiculo.placa }}</span>
+                  </td>
+
+                  <td>
+                    <span class="vehicle-model">{{ veiculo.modelo }}</span>
+                  </td>
+
+                  <td>
+                    <span class="color-value">
+                      <span class="color-dot"></span>
+                      {{ veiculo.cor }}
+                    </span>
+                  </td>
+
+                  <td class="action-column">
+                    <button
+                      type="button"
+                      class="delete-button"
+                      [attr.aria-label]="'Excluir veículo ' + veiculo.placa"
+                      (click)="excluirVeiculo(veiculo.id)"
+                    >
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <footer class="list-footer">
+        <span class="neutral-dot"></span>
+        Dados do cadastro atual
+      </footer>
+    </section>
+  </div>
+</div>
